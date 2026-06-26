@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import *
+from typing import Callable
 
 PERFS = [
     #标准
@@ -18,6 +19,21 @@ PERFS = [
     "racingKings",
     "crazyhouse",
 ]
+
+def run_function(progress_bar:QProgressBar,func:Callable):
+    progress_bar.setValue(0)
+    progress_bar.setRange(0,0)
+
+    try:
+        func()
+    except Exception as error:QMessageBox.critical(
+        None,
+        '错误',
+        f'登录发生错误：{error}',
+    )
+
+    progress_bar.setRange(0,100)
+    progress_bar.setValue(100)
 
 def get_user_name(parent:QWidget|None=None,title:str='输入用户'):
     text, ok = QInputDialog.getText(
