@@ -3,8 +3,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import *
 from berserk import *
 
-# 2.0版本会增加一些组件
-
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):
         super().__init__(parent)

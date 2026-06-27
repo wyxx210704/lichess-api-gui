@@ -49,12 +49,12 @@ window.setMinimumSize(700,400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.2\n如果进度条是满的那么就没有API操作，否则其他情况都是有API操作'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本1.3'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
 progress_bar.setValue(100)
-progress_bar.setFormat('')
+progress_bar.setFormat('api工作状态')
 status_bar.addWidget(progress_bar)
 
 tree = JsonTreeWidget(window)
@@ -65,7 +65,8 @@ window.setWindowIcon(QIcon('./lichess_icon.ico'))
 
 account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')
-more_menu = menu_bar.addMenu('更多功能还在开发中，敬请期待')
+puzzles_menu = menu_bar.addMenu('谜题')
+challenges_menu = menu_bar.addMenu('挑战')
 
 get_account = QAction('账号全部信息')
 get_account.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.account.get())))
@@ -110,6 +111,105 @@ users_menu.addAction(get_rating_history)
 get_user_performance = QAction('用户某个特定种类的表现情况')
 get_user_performance.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_user_performance(get_user_name(window),get_item(window,'选择棋的种类',PERFS)))))
 users_menu.addAction(get_user_performance)
+
+get_puzzle = QAction('获取特定编号的谜题')
+get_puzzle.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.puzzles.get(get_id(window,True)))))
+puzzles_menu.addAction(get_puzzle)
+
+get_daily = QAction('今日谜题')
+get_daily.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.puzzles.get_daily())))
+puzzles_menu.addAction(get_daily)
+
+get_difficulty = QAction('根据难度获取谜题')
+get_difficulty.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.puzzles.get_next(None,get_item(window,'选择难度',["easiest", "easier", "normal", "harder", "hardest"])))))
+puzzles_menu.addAction(get_difficulty)
+
+create_challenge = QAction('挑战特定用户')
+create_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create(
+    get_user_name(window,'输入被挑战的用户'),
+    get_bool(window,'是否排位'),
+    get_int(window,'输入基础时间（秒）'),
+    get_int(window,'输入每步增加时间（秒）'),
+    None,
+    get_item(window,'选择自己执棋颜色',["white", "black"]),
+    (get_item(window,'选择变体',[
+        "chess960",
+        "kingOfTheHill",
+        "threeCheck",
+        "antichess",
+        "atomic",
+        "horde",
+        "racingKings",
+        "crazyhouse",
+    ]) if get_bool(
+        window,
+        '是否为变体',
+    ) else None),
+))))
+challenges_menu.addAction(create_challenge)
+
+challenge_ai = QAction('挑战ai')
+challenge_ai.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create_ai(
+    get_int(window,'输入AI等级',1,8),
+    get_int(window,'输入基础时间（秒）'),
+    get_int(window,'输入每步增加时间（秒）'),
+    None,
+    get_item(window,'选择自己执棋颜色',["white", "black"]),
+    (get_item(window,'选择变体',[
+        "chess960",
+        "kingOfTheHill",
+        "threeCheck",
+        "antichess",
+        "atomic",
+        "horde",
+        "racingKings",
+        "crazyhouse",
+    ]) if get_bool(
+        window,
+        '是否为变体',
+    ) else None),
+))))
+challenges_menu.addAction(challenge_ai)
+
+open_challenge = QAction('在大厅中创建对局')
+open_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create_open(
+    get_int(window,'输入基础时间（秒）'),
+    get_int(window,'输入每步增加时间（秒）'),
+    (get_item(window,'选择变体',[
+        "chess960",
+        "kingOfTheHill",
+        "threeCheck",
+        "antichess",
+        "atomic",
+        "horde",
+        "racingKings",
+        "crazyhouse",
+    ]) if get_bool(
+        window,
+        '是否为变体',
+    ) else None),
+    None,
+    get_bool(window,'是否排位'),
+))))
+challenges_menu.addAction(open_challenge)
+
+challenges_menu.addSeparator()
+
+get_mine = QAction('查看我的挑战')
+get_mine.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.get_mine())))
+challenges_menu.addAction(get_mine)
+
+cancel = QAction('取消挑战')
+cancel.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.cancel(get_id(window,False,'输入要取消的挑战编号')))))
+challenges_menu.addAction(cancel)
+
+accept = QAction('接受挑战')
+accept.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.accept(get_id(window,False,'输入要接受的挑战编号')))))
+challenges_menu.addAction(accept)
+
+decline = QAction('拒绝挑战')
+decline.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.decline(get_id(window,False,'输入要拒绝的挑战编号')))))
+challenges_menu.addAction(decline)
 
 window.show()
 app.exec()
