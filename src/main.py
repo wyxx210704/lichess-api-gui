@@ -49,7 +49,7 @@ window.setMinimumSize(700,400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.3'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本1.4'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -67,6 +67,7 @@ account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')
 puzzles_menu = menu_bar.addMenu('谜题')
 challenges_menu = menu_bar.addMenu('挑战')
+game_menu = menu_bar.addMenu('对局')
 
 get_account = QAction('账号全部信息')
 get_account.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.account.get())))
@@ -204,12 +205,91 @@ cancel.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(c
 challenges_menu.addAction(cancel)
 
 accept = QAction('接受挑战')
-accept.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.accept(get_id(window,False,'输入要接受的挑战编号')))))
+accept.triggered.connect(lambda:run_function(progress_bar,lambda:client.challenges.accept(get_id(window,False,'输入要接受的挑战编号'))))
 challenges_menu.addAction(accept)
 
 decline = QAction('拒绝挑战')
-decline.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.decline(get_id(window,False,'输入要拒绝的挑战编号')))))
+decline.triggered.connect(lambda:run_function(progress_bar,lambda:client.challenges.decline(get_id(window,False,'输入要拒绝的挑战编号'))))
 challenges_menu.addAction(decline)
+
+export = QAction('导出单个对局')
+export.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(
+    get_id(window,False,'输入要导出的对局编号'),
+    False,
+    get_bool(window,'是否添加棋谱'),
+    get_bool(window,'是否添加标签'),
+    get_bool(window,'是否添加时钟'),
+    get_bool(window,'是否添加分析'),
+    get_bool(window,'是否添加开局'),
+    get_bool(window,'是否添加注释'),
+))))
+game_menu.addAction(export)
+
+export_by_player_json = QAction('批量导出用户对局（json）')
+export_by_player_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
+    get_user_name(window,'输入：要导出谁的对局'),
+    False,
+    None,
+    None,
+    get_int(window,'要导出多少对局'),
+    None,
+    get_screening(window,'排位对局'),
+    get_item(window,'选择变体',PERFS),
+    None,
+    get_screening(window,'已分析的对局'),
+    get_bool(window,'是否添加棋谱'),
+    get_bool(window,'pgn是否在json里面'),
+    get_bool(window,'是否添加标签'),
+    get_bool(window,'是否添加时钟'),
+    get_bool(window,'是否添加分析'),
+    get_bool(window,'是否添加开局'),
+    get_screening(window,'正在进行的对局'),
+    get_screening(window,'已结束的对局'),
+    None,
+    None,
+    get_bool(window,'是否添加注释'),
+)))))
+game_menu.addAction(export_by_player_json)
+
+export_by_player_pgn = QAction('批量导出用户对局（pgn）')
+export_by_player_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
+    get_user_name(window,'输入：要导出谁的对局'),
+    True,
+    None,
+    None,
+    get_int(window,'要导出多少对局'),
+    None,
+    get_screening(window,'排位对局'),
+    get_item(window,'选择变体',PERFS),
+    None,
+    get_screening(window,'已分析的对局'),
+    get_bool(window,'是否添加棋谱'),
+    None,
+    get_bool(window,'是否添加标签'),
+    get_bool(window,'是否添加时钟'),
+    get_bool(window,'是否添加分析'),
+    get_bool(window,'是否添加开局'),
+    get_screening(window,'正在进行的对局'),
+    get_screening(window,'已结束的对局'),
+    None,
+    None,
+    get_bool(window,'是否添加注释'),
+)))))
+game_menu.addAction(export_by_player_pgn)
+
+game_menu.addSeparator()
+
+get_ongoing = QAction('正在进行的对局')
+get_ongoing.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(client.games.get_ongoing())))
+game_menu.addAction(get_ongoing)
+
+view_game = QAction('观看对局')
+view_game.triggered.connect(lambda:start_game_viewer(client.games.stream_game_moves(get_id(window,False,'输入要观看的对局编号'))))
+game_menu.addAction(view_game)
+
+import_game = QAction('导入对局')
+import_game.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.import_game(get_pgn(window,'导入对局')))))
+game_menu.addAction(import_game)
 
 window.show()
 app.exec()
