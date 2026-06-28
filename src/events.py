@@ -39,6 +39,7 @@ def run_function(progress_bar:QProgressBar,func:Callable):
 def start_game_viewer(generator:Generator):
     window = GameViewer(generator)
     sub_window_list.append(window)#为了防止函数运行结束时窗口自动关闭
+    window.destroyed.connect(lambda:sub_window_list.remove(window))
     window.show()
 
 def get_user_name(parent:QWidget|None=None,title:str='输入用户'):

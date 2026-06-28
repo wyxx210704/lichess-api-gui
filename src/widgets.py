@@ -239,6 +239,14 @@ class GameViewerWorker(QObject):
         for value in self.generator:
             self.send_dict.emit(value)
 
+class NoStretchingSvgWidget(QSvgWidget):
+    def __init__(self,parent:QWidget|None=None):
+        super().__init__(parent)
+
+    def load(self, contents:str):
+        super().load(contents)
+        self.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+
 class InformationDisplay(QLineEdit):
     def __init__(self,parent:QWidget|None=None):
         super().__init__(parent)
@@ -248,18 +256,18 @@ class GameViewer(QWidget):
     def __init__(self,generator:Generator):
         # 第一部分：初始化窗口
         super().__init__()
-        self.layout_ = QHBoxLayout(self)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal,self)
+        QVBoxLayout(self).addWidget(self.splitter)
         self.generator = generator
-
+        
         self.setWindowTitle('对局查看器')
         self.setWindowIcon(QIcon('./lichess_icon.ico'))
 
         # 第二部分：窗口顶层部件
-        self.svg_widget = QSvgWidget(self)
-        self.svg_widget.setFixedSize(500,500)
+        self.svg_widget = NoStretchingSvgWidget(self)
         self.tab_widget = QTabWidget(self)
-        self.layout_.addWidget(self.svg_widget)#在左边
-        self.layout_.addWidget(self.tab_widget)#在右边
+        self.splitter.addWidget(self.svg_widget)#在左边
+        self.splitter.addWidget(self.tab_widget)#在右边
 
         # 第三部分：tab_widget里的部件
         self.tree = JsonTreeWidget(self.tab_widget)
