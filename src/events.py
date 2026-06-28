@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import *
+from berserk import *
 from typing import *
 
-from widgets import GameViewer
+from tools import GameViewer
 sub_window_list = []
 PERFS = [
     #标准
@@ -21,6 +22,46 @@ PERFS = [
     "racingKings",
     "crazyhouse",
 ]
+
+def login():
+    while True:
+        token,success = QInputDialog.getText(
+            None,
+            '登录',
+            '请输入token',
+        )
+
+        if success:
+            try:Client(TokenSession(token)).account.get()
+            except Exception as error:QMessageBox.critical(
+                None,
+                '错误',
+                f'登录发生错误：{error}')
+            else:
+                QMessageBox.information(
+                    None,
+                    '提示',
+                    '登录成功，接下来将检查账号类型')
+                break
+        else:exit(0)
+
+    user_info = Client(TokenSession(token)).account.get()
+    if ('title' in user_info) and (user_info['title'] == 'BOT'):
+        is_bot = True
+        QMessageBox.information(
+            None,
+            '检查结果',
+            '这是一个bot账号，下棋板块会调用client.bot'
+        )
+    else:
+        is_bot = False
+        QMessageBox.information(
+            None,
+            '检查结果',
+            '这不是一个bot账号，下棋板块会调用client.board'
+        )
+
+    return token,is_bot
 
 def run_function(progress_bar:QProgressBar,func:Callable):
     progress_bar.setValue(0)

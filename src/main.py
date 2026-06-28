@@ -2,46 +2,11 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from berserk import *
 
-from widgets import *
+from widgets import JsonTreeWidget
 from events import *
 
 app = QApplication([])
-while True:
-    token,success = QInputDialog.getText(
-        None,
-        '登录',
-        '请输入token',
-    )
-
-    if success:
-        try:Client(TokenSession(token)).account.get()
-        except Exception as error:QMessageBox.critical(
-            None,
-            '错误',
-            f'登录发生错误：{error}')
-        else:
-            QMessageBox.information(
-                None,
-                '提示',
-                '登录成功，接下来将检查账号类型')
-            break
-    else:exit(0)
-
-user_info = Client(TokenSession(token)).account.get()
-if ('title' in user_info) and (user_info['title'] == 'BOT'):
-    is_bot = True
-    QMessageBox.information(
-        None,
-        '检查结果',
-        '这是一个bot账号，下棋板块会调用client.bot'
-    )
-else:
-    is_bot = False
-    QMessageBox.information(
-        None,
-        '检查结果',
-        '这不是一个bot账号，下棋板块会调用client.board'
-    )
+token,is_bot = login()
 
 client = Client(TokenSession(token))
 window = QMainWindow()
@@ -49,7 +14,7 @@ window.setMinimumSize(700,400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.4'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本1.5'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -61,7 +26,7 @@ tree = JsonTreeWidget(window)
 window.setCentralWidget(tree)
 
 window.setWindowTitle('lichess api')
-window.setWindowIcon(QIcon('./lichess_icon.ico'))
+window.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
 
 account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')

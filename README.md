@@ -1,4 +1,4 @@
-# lichess-api-gui，版本1.4
+# lichess-api-gui，版本1.5
 - 本项目为wyxx210704原创项目，继承此项目请遵循MIT协议
 - 主要功能：为lichess api添加一个图形界面，方便控制
 
