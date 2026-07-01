@@ -94,8 +94,8 @@ create_challenge = QAction('挑战特定用户')
 create_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create(
     get_user_name(window,'输入被挑战的用户'),
     get_bool(window,'是否排位'),
-    get_int(window,'输入基础时间（秒）'),
-    get_int(window,'输入每步增加时间（秒）'),
+    get_int(window,'输入基础时间（秒）',1,10800),
+    get_int(window,'输入每步增加时间（秒）',1,180),
     None,
     get_item(window,'选择自己执棋颜色',["white", "black"]),
     (get_item(window,'选择变体',[
@@ -117,8 +117,8 @@ challenges_menu.addAction(create_challenge)
 challenge_ai = QAction('挑战ai')
 challenge_ai.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create_ai(
     get_int(window,'输入AI等级',1,8),
-    get_int(window,'输入基础时间（秒）'),
-    get_int(window,'输入每步增加时间（秒）'),
+    get_int(window,'输入基础时间（秒）',1,10800),
+    get_int(window,'输入每步增加时间（秒）',1,180),
     None,
     get_item(window,'选择自己执棋颜色',["white", "black"]),
     (get_item(window,'选择变体',[
@@ -137,27 +137,32 @@ challenge_ai.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_
 ))))
 challenges_menu.addAction(challenge_ai)
 
-open_challenge = QAction('在大厅中创建对局')
-open_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create_open(
-    get_int(window,'输入基础时间（秒）'),
-    get_int(window,'输入每步增加时间（秒）'),
-    (get_item(window,'选择变体',[
-        "chess960",
-        "kingOfTheHill",
-        "threeCheck",
-        "antichess",
-        "atomic",
-        "horde",
-        "racingKings",
-        "crazyhouse",
-    ]) if get_bool(
-        window,
-        '是否为变体',
-    ) else None),
-    None,
-    get_bool(window,'是否排位'),
-))))
-challenges_menu.addAction(open_challenge)
+if not is_bot:
+    open_challenge = QAction('在大厅中创建对局')
+    open_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.board.seek(
+        get_int(window,'输入基础时间（秒）',1,10800),
+        get_int(window,'输入每步增加时间（秒）',1,180),
+        get_bool(window,'是否排位'),
+        (get_item(window,'选择变体',[
+            "chess960",
+            "kingOfTheHill",
+            "threeCheck",
+            "antichess",
+            "atomic",
+            "horde",
+            "racingKings",
+            "crazyhouse",
+        ]) if get_bool(
+            window,
+            '是否为变体',
+        ) else None),
+        get_item(window,'选择自己执棋颜色',["white", "black",'random']),
+        (
+            -get_int(window,'期待匹配到等级分最低的对手比自己低多少',0,500),
+            get_int(window,'期待匹配到等级分最高的对手比自己高多少',0,500),
+        )
+    ))))
+    challenges_menu.addAction(open_challenge)
 
 challenges_menu.addSeparator()
 

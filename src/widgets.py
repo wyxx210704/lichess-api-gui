@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import *
-from typing import Generator
 
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):
@@ -145,3 +144,20 @@ class InformationDisplay(QLineEdit):
     def __init__(self,parent:QWidget|None=None):
         super().__init__(parent)
         self.setReadOnly(True)
+
+class ControllableWizardPage(QWizardPage):
+    def __init__(self,parent:QWidget|None=None):
+        super().__init__(parent)
+        self.state = True
+
+    def change_state(self,state:bool):
+        self.state = state
+        self.completeChanged.emit()
+
+    def isComplete(self):
+        return self.state
+    
+class TokenManager(QWidget):
+    def __init__(self, parent:QWidget|None=None):
+        super().__init__(parent)
+        QVBoxLayout(self).addWidget(QLabel('功能将在下一版本更新，进行期待'))
