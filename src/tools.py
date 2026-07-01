@@ -3,6 +3,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import *
 from typing import Generator
 from berserk import *
+from json import load
 import chess
 import chess.svg
 
@@ -114,7 +115,6 @@ class LoginWizard(QWizard):
     3. 将token添加到常用列表或者从常用列表删除
     '''
 
-    def get_info(self):return self.token,self.is_bot
     def __init__(self, parent:QWidget|None=None):
         super().__init__(parent)
         self.login_success = False
@@ -157,6 +157,9 @@ class LoginWizard(QWizard):
             self.page_2.change_state(True)
             self.state_display.setText(f'登录成功，这个账号{'是' if self.is_bot else '不是'}bot账号，下棋时用的API是{'bot' if self.is_bot else 'board'}')
 
+    def select_from_the_list(self,item:QListWidgetItem):self.token_input.setText(self.tokens[item.text()])
+    def get_info(self):return self.token,self.is_bot
+
     def token_creation_guidelines(self):
         self.page_1 = QWizardPage(self)
         self.page_1.setTitle('创建token')
@@ -180,7 +183,19 @@ class LoginWizard(QWizard):
         self.addPage(self.page_2)
 
         self.page_2_layout = QVBoxLayout(self.page_2)
-        self.page_2_layout.addWidget(QLabel('请在下方输入token'))
+        self.page_2_layout.addWidget(QLabel('请在下方输入token，或者从列表中选择'))
+
+        self.tokens = load(open(
+            '../configuration_and_resources/config.json',
+            'r',
+            encoding='utf-8',
+            errors='igmore',
+        ))['tokens']
+
+        self.tokens_list = QListWidget(self.page_2)
+        self.tokens_list.addItems([name for name in self.tokens.keys()])
+        self.tokens_list.itemClicked.connect(self.select_from_the_list)
+        self.page_2_layout.addWidget(self.tokens_list)
 
         self.token_input = QLineEdit()
         self.token_input.setPlaceholderText('输入token')
@@ -201,7 +216,7 @@ class LoginWizard(QWizard):
     def token_manager_page(self):
         self.page_3 = QWizardPage(self)
         self.page_3.setTitle('管理token')
-        self.page_3.setSubTitle('如果有常用token的话，那就可以在这里管理，该功能在下一版本更新')
+        self.page_3.setSubTitle('如果有常用token的话，那就可以在这里管理，如果不需要就点完成按钮')
         self.addPage(self.page_3)
 
         token_manager = TokenManager(self.page_3)

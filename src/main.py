@@ -14,7 +14,7 @@ window.setMinimumSize(700,400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.5'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本1.7'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -155,7 +155,7 @@ if not is_bot:
         ]) if get_bool(
             window,
             '是否为变体',
-        ) else None),
+        ) else 'standard'),
         get_item(window,'选择自己执棋颜色',["white", "black",'random']),
         (
             -get_int(window,'期待匹配到等级分最低的对手比自己低多少',0,500),
