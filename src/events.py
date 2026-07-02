@@ -44,10 +44,17 @@ def run_function(progress_bar:QProgressBar,func:Callable):
     progress_bar.setValue(100)
 
 def start_game_viewer(generator:Generator):
-    window = GameViewer(generator)
-    sub_window_list.append(window)#为了防止函数运行结束时窗口自动关闭
-    window.destroyed.connect(lambda:sub_window_list.remove(window))
-    window.show()
+    try:
+        window = GameViewer(generator)
+        sub_window_list.append(window)#为了防止函数运行结束时窗口自动关闭
+        window.destroyed.connect(lambda:sub_window_list.remove(window))
+        window.show()
+    except Exception as error:
+        QMessageBox.critical(
+            None,
+            '打开对局查看器错误',
+            f'具体错误信息：{error}',
+        )
 
 def get_user_name(parent:QWidget|None=None,title:str='输入用户'):
     text, ok = QInputDialog.getText(

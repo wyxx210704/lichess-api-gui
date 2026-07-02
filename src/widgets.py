@@ -4,6 +4,7 @@ from PyQt6.QtCore import *
 import json
 import os
 
+from translates import *
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):
         super().__init__(parent)
@@ -96,14 +97,16 @@ class JsonTreeWidget(QTreeWidget):
                 item.setText(1, "True" if item_data else "False")
             elif item_data is None:
                 item.setText(1, "None")
-            elif isinstance(item_data, str) and '\n' in item_data:
-                # 多行字符串：展开为子项
-                item.setText(1, f"({item_data.count(chr(10)) + 1}行)")
-                lines = item_data.split('\n')
-                for i, line in enumerate(lines, 1):
-                    line_item = QTreeWidgetItem(item)
-                    line_item.setText(0, f"第{i}行")
-                    line_item.setText(1, line)
+            elif isinstance(item_data, str):
+                if '\n' in item_data:
+                    # 多行字符串：展开为子项
+                    item.setText(1, f"({item_data.count(chr(10)) + 1}行)")
+                    lines = item_data.split('\n')
+                    for i, line in enumerate(lines, 1):
+                        line_item = QTreeWidgetItem(item)
+                        line_item.setText(0, f"第{i}行")
+                        line_item.setText(1, line)
+                else:item.setText(1,get_value_translate(item_data))
             else:
                 item.setText(1, str(item_data))
 
@@ -111,7 +114,7 @@ class JsonTreeWidget(QTreeWidget):
         """递归添加字典项"""
         for key, value in data.items():
             item = QTreeWidgetItem(parent)
-            item.setText(0, str(key))
+            item.setText(0, get_key_translate(str(key)))
             
             if isinstance(value, list):
                 item.setText(1, "[]")
@@ -123,14 +126,16 @@ class JsonTreeWidget(QTreeWidget):
                 item.setText(1, "True" if value else "False")
             elif value is None:
                 item.setText(1, "null")
-            elif isinstance(value, str) and '\n' in value:
-                # 多行字符串：展开为子项
-                item.setText(1, f"({value.count(chr(10)) + 1}行)")
-                lines = value.split('\n')
-                for i, line in enumerate(lines, 1):
-                    line_item = QTreeWidgetItem(item)
-                    line_item.setText(0, f"第{i}行")
-                    line_item.setText(1, line)
+            elif isinstance(value, str):
+                if '\n' in value:
+                    # 多行字符串：展开为子项
+                    item.setText(1, f"({value.count(chr(10)) + 1}行)")
+                    lines = value.split('\n')
+                    for i, line in enumerate(lines, 1):
+                        line_item = QTreeWidgetItem(item)
+                        line_item.setText(0, f"第{i}行")
+                        line_item.setText(1, line)
+                else:item.setText(1,get_value_translate(value))
             else:
                 item.setText(1, str(value))
 
