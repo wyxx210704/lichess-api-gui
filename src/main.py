@@ -109,6 +109,13 @@ get_difficulty.setShortcut('Ctrl+Shift+P, I')
 get_difficulty.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.puzzles.get_next(None,get_item(window,'选择难度',["easiest", "easier", "normal", "harder", "hardest"])))))
 puzzles_menu.addAction(get_difficulty)
 
+puzzles_menu.addSeparator()
+
+view_puzzle = QAction('在独立窗口中查看谜题')
+view_puzzle.setShortcut('Ctrl+Shift+P, V')
+view_puzzle.triggered.connect(lambda:start_puzzle_viewer(client,window))
+puzzles_menu.addAction(view_puzzle)
+
 create_challenge = QAction('挑战特定用户')
 create_challenge.setShortcut('Ctrl+Shift+C, U')
 create_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create(

@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from typing import Generator
 from berserk import *
@@ -221,3 +221,385 @@ class LoginWizard(QWizard):
 
         token_manager = TokenManager(self.page_3)
         QVBoxLayout(self.page_3).addWidget(token_manager)
+
+class ChessPuzzleViewer(QMainWindow):
+    def __init__(self, puzzle_data):
+        raise RuntimeError('该组件暂时不稳定，还属于内测阶段，暂时无法使用')
+
+        super().__init__()
+        self.puzzle_data = puzzle_data
+        self.board = chess.Board()
+        self.move_history = []
+        self.solution_moves = []
+        self.all_moves = []  # 所有走法（PGN + 解）
+        self.current_move_index = -1
+        
+        # 解析数据
+        self.parse_pgn()
+        self.parse_solution()
+        
+        # 设置界面
+        self.setWindowTitle("国际象棋谜题查看器")
+        self.setMinimumSize(900, 700)
+        
+        # 主窗口部件
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # 主布局 - 水平
+        main_layout = QHBoxLayout()
+        central_widget.setLayout(main_layout)
+        
+        # 左侧：棋盘
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+        left_widget.setLayout(left_layout)
+        left_widget.setFixedWidth(500)
+        
+        self.board_widget = QSvgWidget()
+        left_layout.addWidget(self.board_widget)
+        
+        # 添加走法计数标签
+        self.move_label = QLabel("步数: 0/0")
+        self.move_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.move_label.setFont(QFont("Arial", 12))
+        left_layout.addWidget(self.move_label)
+        
+        main_layout.addWidget(left_widget)
+        
+        # 右侧：信息面板
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        right_widget.setLayout(right_layout)
+        right_widget.setMinimumWidth(350)
+        
+        # 右上角：谜题信息
+        info_widget = QWidget()
+        info_layout = QVBoxLayout()
+        info_widget.setLayout(info_layout)
+        
+        info_label = QLabel("谜题信息")
+        info_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        info_layout.addWidget(info_label)
+        
+        # 显示谜题信息
+        self.info_text = QLabel()
+        self.info_text.setFont(QFont("Courier New", 10))
+        self.info_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.update_info()
+        info_layout.addWidget(self.info_text)
+        
+        right_layout.addWidget(info_widget)
+        
+        # 右下角：走法列表
+        list_widget = QWidget()
+        list_layout = QVBoxLayout()
+        list_widget.setLayout(list_layout)
+        
+        list_label = QLabel("走法列表")
+        list_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        list_layout.addWidget(list_label)
+        
+        self.move_list = QListWidget()
+        self.move_list.setFont(QFont("Courier New", 11))
+        self.move_list.itemClicked.connect(self.on_move_selected)
+        list_layout.addWidget(self.move_list)
+        
+        right_layout.addWidget(list_widget)
+        
+        # 设置右侧布局的比例
+        right_layout.setStretch(0, 1)
+        right_layout.setStretch(1, 2)
+        
+        self.build_all_moves()
+        # 更新棋盘到初始位置（PGN结束/解开始的位置）
+        self.jump_to_transition()
+        
+    def parse_pgn(self):
+        """解析PGN走法"""
+        pgn_str = self.puzzle_data['game']['pgn']
+        moves = pgn_str.split()
+        
+        for move_str in moves:
+            try:
+                # 尝试解析走法
+                move = self.board.parse_san(move_str)
+                self.board.push(move)
+                self.move_history.append(move_str)
+            except ValueError:
+                # 如果解析失败，可能是结果标记或其他内容
+                pass
+                
+    def parse_solution(self):
+        """解析谜题解"""
+        self.board = chess.Board()
+        # 重置棋盘并重新播放PGN到初始位置
+        self.board.reset()
+        pgn_str = self.puzzle_data['game']['pgn']
+        moves = pgn_str.split()
+        for move_str in moves:
+            try:
+                move = self.board.parse_san(move_str)
+                self.board.push(move)
+            except ValueError:
+                pass
+        
+        # 现在应用解
+        solution = self.puzzle_data['puzzle']['solution']
+        for move_uci in solution:
+            move = self.board.parse_uci(move_uci)
+            san = self.board.san(move)
+            self.board.push(move)
+            self.solution_moves.append(san)
+            
+    def build_all_moves(self):
+        """构建所有走法列表（PGN + 解）"""
+        # 重置棋盘
+        self.board = chess.Board()
+        
+        # 先添加PGN走法（使用SAN格式）
+        pgn_str = self.puzzle_data['game']['pgn']
+        pgn_moves = pgn_str.split()
+        for move_str in pgn_moves:
+            try:
+                move = self.board.parse_san(move_str)
+                san = self.board.san(move)
+                self.board.push(move)
+                self.all_moves.append({
+                    'san': san,
+                    'type': 'pgn',
+                    'move': move
+                })
+            except ValueError:
+                pass
+        
+        # 记录交界处的索引
+        self.transition_index = len(self.all_moves) - 1
+        
+        # 添加解走法（使用SAN格式）
+        self.board = chess.Board()
+        # 重置并重播PGN
+        pgn_str = self.puzzle_data['game']['pgn']
+        pgn_moves = pgn_str.split()
+        for move_str in pgn_moves:
+            try:
+                move = self.board.parse_san(move_str)
+                self.board.push(move)
+            except ValueError:
+                pass
+        
+        for move_uci in self.puzzle_data['puzzle']['solution']:
+            move = self.board.parse_uci(move_uci)
+            san = self.board.san(move)
+            self.board.push(move)
+            self.all_moves.append({
+                'san': san,
+                'type': 'solution',
+                'move': move
+            })
+        
+        # 更新列表显示
+        self.populate_list()
+        
+    def populate_list(self):
+        """填充走法列表"""
+        self.move_list.clear()
+        
+        for i, move_info in enumerate(self.all_moves):
+            item = QListWidgetItem(move_info['san'])
+            
+            # 根据类型设置颜色
+            if move_info['type'] == 'pgn':
+                item.setForeground(QColor(40, 40, 200))  # 蓝色
+                item.setBackground(QColor(240, 240, 255))
+            else:
+                item.setForeground(QColor(200, 40, 40))  # 红色
+                item.setBackground(QColor(255, 240, 240))
+            
+            # 添加步数前缀
+            move_number = (i // 2) + 1
+            if i % 2 == 0:
+                display_text = f"{move_number}. {move_info['san']}"
+            else:
+                display_text = f"{move_number}... {move_info['san']}"
+            
+            # 如果是解的开始，添加标记
+            if i == self.transition_index + 1:
+                display_text = "▶ " + display_text
+            
+            item.setText(display_text)
+            self.move_list.addItem(item)
+            
+    def update_board(self, index):
+        """更新棋盘到指定步数"""
+        if index < 0 or index >= len(self.all_moves):
+            return
+            
+        # 重置棋盘
+        self.board = chess.Board()
+        
+        # 重播到指定步数
+        for i in range(index + 1):
+            move_info = self.all_moves[i]
+            move = move_info['move']
+            # 需要从UCI重新解析，因为move对象在reset后会失效
+            self.board.push(move)
+        
+        self.current_move_index = index
+        
+        # 更新棋盘显示
+        self.update_board_display()
+        
+        # 更新标签
+        total = len(self.all_moves)
+        self.move_label.setText(f"步数: {index + 1}/{total}")
+        
+    def update_board_display(self):
+        """更新棋盘SVG显示"""
+        try:
+            svg_data = chess.svg.board(
+                self.board,
+                size=450,
+                coordinates=True,
+                style="margin: 0px;"
+            )
+            self.board_widget.load(QByteArray(svg_data.encode('utf-8')))
+        except Exception as e:
+            print(f"更新棋盘时出错: {e}")
+            
+    def jump_to_transition(self):
+        """跳转到PGN和解的交界处"""
+        if self.transition_index >= 0:
+            self.update_board(self.transition_index)
+            # 高亮列表中的对应项
+            self.move_list.setCurrentRow(self.transition_index)
+            self.move_list.scrollToItem(self.move_list.item(self.transition_index))
+            
+    def on_move_selected(self, item):
+        """处理列表项选择事件"""
+        row = self.move_list.row(item)
+        self.update_board(row)
+        
+    def update_info(self):
+        """更新谜题信息显示（中文标签）"""
+        puzzle = self.puzzle_data['puzzle']
+        game = self.puzzle_data['game']
+        players = game['players']
+        
+        white = next(p for p in players if p['color'] == 'white')
+        black = next(p for p in players if p['color'] == 'black')
+        
+        # 主题翻译映射
+        theme_translation = {
+            'veryLong': '非常长',
+            'endgame': '残局',
+            'crushing': '压倒性',
+            'pawnEndgame': '兵残局',
+            'defensiveMove': '防守走法',
+            'advantage': '优势',
+            'mate': '将杀',
+            'mateIn1': '一步将杀',
+            'mateIn2': '两步将杀',
+            'mateIn3': '三步将杀',
+            'mateIn4': '四步将杀',
+            'mateIn5': '五步将杀',
+            'mateIn6': '六步将杀',
+            'mateIn7': '七步将杀',
+            'mateIn8': '八步将杀',
+            'mateIn9': '九步将杀',
+            'mateIn10': '十步将杀',
+            'middlegame': '中局',
+            'opening': '开局',
+            'queenEndgame': '后残局',
+            'rookEndgame': '车残局',
+            'knightEndgame': '马残局',
+            'bishopEndgame': '象残局',
+            'queenRookEndgame': '后车残局',
+            'queenBishopEndgame': '后象残局',
+            'queenKnightEndgame': '后马残局',
+            'rookBishopEndgame': '车象残局',
+            'rookKnightEndgame': '车马残局',
+            'bishopKnightEndgame': '象马残局',
+            'enPassant': '吃过路兵',
+            'castling': '王车易位',
+            'promotion': '兵升变',
+            'underPromotion': '低升变',
+        }
+        
+        # 翻译主题
+        translated_themes = []
+        for theme in puzzle['themes']:
+            translated_themes.append(theme_translation.get(theme, theme))
+        
+        info = f"""
+谜题 ID: {puzzle['id']}
+评级: {puzzle['rating']}
+对局次数: {puzzle['plays']}
+
+对局信息:
+  白方: {white['name']} ({white['rating']})
+  黑方: {black['name']} ({black['rating']})
+  对局类型: {game['perf']['name']}
+  是否评级: {'是' if game['rated'] else '否'}
+
+主题: {', '.join(translated_themes)}
+PGN走法数: {len(self.move_history)}
+解走法数: {len(self.solution_moves)}
+        """
+        self.info_text.setText(info.strip())
+
+class ErrorMessageBox(QDialog):
+    """
+    自定义错误信息展示消息框
+    
+    参数:
+        file_name: 错误发生文件名 (str)
+        line_number: 错误发生行号 (int)
+        error_type: 错误类型 (str)
+        error_message: 错误信息 (str)
+        title: 窗口标题 (str, 默认: "错误")
+    """
+    
+    def __init__(self, file_name:str, line_number:int, error_type:str, error_message:str, title:str="错误", parent:QWidget|None=None):
+        super().__init__(parent)
+        self.layout_ = QFormLayout(self)
+
+        self.setWindowTitle(title)
+        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+
+        self.file_name = file_name
+        self.line_number = str(line_number)
+        self.error_type = error_type
+        self.error_message = error_message
+
+        self.layout_.addRow('文件名称',QLabel(self.file_name))
+        self.layout_.addRow('第几行',QLabel(self.line_number))
+        self.layout_.addRow('报错类型',QLabel(self.error_type))
+        self.layout_.addRow('报错信息',QLabel(self.error_message))
+
+        self.button_1 = QPushButton(
+            '复制',
+            self
+        )
+
+        self.button_2 = QPushButton(
+            '完成',
+            self
+        )
+
+        self.button_1.clicked.connect(self.copy_info_to_clipboard)
+        self.button_2.clicked.connect(self.accept)
+        self.layout_.addRow(self.button_1,self.button_2)
+
+    def copy_info_to_clipboard(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(
+            f'''
+            报错日志
+            ------------------------------
+            文件名称：{self.file_name}
+            第几行：{self.line_number}
+            报错类型：{self.error_type}
+            报错信息：{self.error_message}
+            '''
+        )
