@@ -3,6 +3,7 @@ from PyQt6.QtGui import *
 from berserk import *
 
 from widgets import JsonTreeWidget
+from start_play_chess import turn_from_main
 from events import *
 
 app = QApplication([])
@@ -19,7 +20,7 @@ window.setMinimumSize(700,400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.9'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本1.11'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -38,6 +39,7 @@ users_menu = menu_bar.addMenu('查询用户')
 puzzles_menu = menu_bar.addMenu('谜题')
 challenges_menu = menu_bar.addMenu('挑战')
 game_menu = menu_bar.addMenu('对局')
+more_menu = menu_bar.addMenu('更多')
 
 get_account = QAction('账号全部信息')
 get_account.setShortcut('Ctrl+Shift+A, I')
@@ -168,29 +170,7 @@ challenges_menu.addAction(challenge_ai)
 if not is_bot:
     open_challenge = QAction('在大厅中创建对局')
     open_challenge.setShortcut('Ctrl+Shift+C, O')
-    open_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.board.seek(
-        get_int(window,'输入基础时间（秒）',1,10800),
-        get_int(window,'输入每步增加时间（秒）',1,180),
-        get_bool(window,'是否排位'),
-        (get_item(window,'选择变体',[
-            "chess960",
-            "kingOfTheHill",
-            "threeCheck",
-            "antichess",
-            "atomic",
-            "horde",
-            "racingKings",
-            "crazyhouse",
-        ]) if get_bool(
-            window,
-            '是否为变体',
-        ) else 'standard'),
-        get_item(window,'选择自己执棋颜色',["white", "black",'random']),
-        (
-            -get_int(window,'期待匹配到等级分最低的对手比自己低多少',0,500),
-            get_int(window,'期待匹配到等级分最高的对手比自己高多少',0,500),
-        )
-    ))))
+    open_challenge.triggered.connect(lambda:create_game(client,window))
     challenges_menu.addAction(open_challenge)
 
 challenges_menu.addSeparator()
@@ -325,6 +305,16 @@ import_game = QAction('导入对局')
 import_game.setShortcut('Ctrl+Shift+G, I')
 import_game.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.import_game(get_pgn(window,'导入对局')))))
 game_menu.addAction(import_game)
+
+turn_to_play_chess = QAction('跳转到下棋')
+turn_to_play_chess.setShortcut('Ctrl+Shift+M, T')
+turn_to_play_chess.triggered.connect(turn_from_main)
+more_menu.addAction(turn_to_play_chess)
+
+settings = QAction('设置')
+settings.setShortcut('Ctrl+Shift+M, S')
+settings.triggered.connect(start_sittings)
+more_menu.addAction(settings)
 
 window.show()
 app.exec()

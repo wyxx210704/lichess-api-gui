@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import *
-import json
+from json import *
 import os
 
 from translates import *
@@ -174,6 +174,9 @@ class TokenManager(QWidget):
         # 存储token数据 {name: token}
         self.tokens_data = {}
         
+        # 存储完整的配置数据（用于保留其他字段）
+        self.full_config = {}
+        
         # 初始化UI
         self.init_ui()
         
@@ -241,26 +244,39 @@ class TokenManager(QWidget):
             
             if os.path.exists(self.config_path):
                 with open(self.config_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    config = json.load(f)
-                    if 'tokens' in config:
-                        self.tokens_data = config['tokens']
+                    self.full_config = load(f)
+                    # 提取 tokens 数据
+                    if 'tokens' in self.full_config:
+                        self.tokens_data = self.full_config['tokens']
+                    else:
+                        self.tokens_data = {}
+                        self.full_config['tokens'] = self.tokens_data
             else:
-                # 如果文件不存在，创建一个空的
+                # 如果文件不存在，创建默认配置
+                self.full_config = {'tokens': {}}
                 self.tokens_data = {}
                 self.save_config()
         except Exception as e:
             QMessageBox.warning(self, "警告", f"加载配置文件失败: {str(e)}")
+            self.full_config = {'tokens': {}}
             self.tokens_data = {}
     
     def save_config(self):
-        """保存配置到文件"""
+        """保存配置到文件（只修改tokens字段，保留其他所有字段）"""
         try:
             # 确保目录存在
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             
-            config = {'tokens': self.tokens_data}
+            # 如果文件不存在，创建基础配置
+            if not os.path.exists(self.config_path):
+                self.full_config = {}
+            
+            # 只更新 tokens 字段，其他字段完全不动
+            self.full_config['tokens'] = self.tokens_data
+            
+            # 写回文件
             with open(self.config_path, 'w', encoding='utf-8') as f:
-                json.dump(config, f, ensure_ascii=False, indent=4)
+                dump(self.full_config, f, ensure_ascii=False, indent=4)
             
             QMessageBox.information(self, "提示", "保存成功！")
             return True
@@ -357,3 +373,60 @@ class TokenManager(QWidget):
             self.btn_delete.setEnabled(False)
             self.line_edit_name.clear()
             self.line_edit_token.clear()
+
+class AutoLoginControl(QWidget):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.layout_ = QVBoxLayout(self)
+        self.config = load(open(
+            '../configuration_and_resources/config.json',
+            'r',
+            encoding='utf-8',
+            errors='ignore',
+        ))
+
+        self.group_box = QGroupBox(
+            '是否自动登录',
+            self,
+        )
+
+        self.group_box.setCheckable(True)
+        self.layout_.addWidget(self.group_box)
+        self.layout_in_group_box = QHBoxLayout(self.group_box)
+
+        self.layout_in_group_box.addWidget(QLabel('token：'))
+        self.token_input = QLineEdit(self.group_box)
+        self.layout_in_group_box.addWidget(self.token_input)
+
+        self.group_box.setChecked(self.config['auto_login']['enable'])
+        self.token_input.setText(self.config['auto_login']['token'])
+
+        self.save_button = QPushButton(
+            '保存',
+            self,
+        )
+
+        self.save_button.clicked.connect(self.save_file)
+        self.layout_.addWidget(self.save_button)
+
+    def save_file(self):
+        self.config['auto_login']['enable'] = self.group_box.isChecked()
+        self.config['auto_login']['token'] = self.token_input.text()
+
+        dump(
+            self.config,
+            open(
+                '../configuration_and_resources/config.json',
+                'w',
+                encoding='utf-8',
+                errors='ignore',
+            ),
+            ensure_ascii=False,
+            indent=4,
+        )
+
+        QMessageBox.information(
+            None,
+            '提示',
+            '保存成功',
+        )

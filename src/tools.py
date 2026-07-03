@@ -189,7 +189,7 @@ class LoginWizard(QWizard):
             '../configuration_and_resources/config.json',
             'r',
             encoding='utf-8',
-            errors='igmore',
+            errors='ignore',
         ))['tokens']
 
         self.tokens_list = QListWidget(self.page_2)
@@ -222,10 +222,102 @@ class LoginWizard(QWizard):
         token_manager = TokenManager(self.page_3)
         QVBoxLayout(self.page_3).addWidget(token_manager)
 
+class ErrorMessageBox(QDialog):
+    """
+    自定义错误信息展示消息框
+    
+    参数:
+        file_name: 错误发生文件名 (str)
+        line_number: 错误发生行号 (int)
+        error_type: 错误类型 (str)
+        error_message: 错误信息 (str)
+        title: 窗口标题 (str, 默认: "错误")
+    """
+    
+    def __init__(self, file_name:str, line_number:int, error_type:str, error_message:str, title:str="错误", parent:QWidget|None=None):
+        super().__init__(parent)
+        self.layout_ = QFormLayout(self)
+
+        self.setWindowTitle(title)
+        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+
+        self.file_name = file_name
+        self.line_number = str(line_number)
+        self.error_type = error_type
+        self.error_message = error_message
+
+        self.layout_.addRow('文件名称',QLabel(self.file_name))
+        self.layout_.addRow('第几行',QLabel(self.line_number))
+        self.layout_.addRow('报错类型',QLabel(self.error_type))
+        self.layout_.addRow('报错信息',QLabel(self.error_message))
+
+        self.button_1 = QPushButton(
+            '复制',
+            self
+        )
+
+        self.button_2 = QPushButton(
+            '完成',
+            self
+        )
+
+        self.button_1.clicked.connect(self.copy_info_to_clipboard)
+        self.button_2.clicked.connect(self.accept)
+        self.layout_.addRow(self.button_1,self.button_2)
+
+    def copy_info_to_clipboard(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(
+            f'''
+            报错日志
+            ------------------------------
+            文件名称：{self.file_name}
+            第几行：{self.line_number}
+            报错类型：{self.error_type}
+            报错信息：{self.error_message}
+            '''
+        )
+
+class NoCloseProgressDialog(QProgressDialog):
+    def __init__(self, labelText:str,parent:QWidget|None=None):
+        super().__init__(labelText,None, 0,0, parent)
+        self.setWindowTitle('进程正在执行中')
+        self.setCancelButton(None)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
+
+class HorizontalLine(QFrame):
+    def __init__(self, parent:QWidget|None=None):
+        super().__init__(parent)
+        self.setFrameShape(QFrame.Shape.HLine)
+
+class SettingsWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.scroll_area = QScrollArea(self)
+        self.setCentralWidget(self.scroll_area)
+        self.scroll_area.setWidgetResizable(True)
+
+        self.widget_in_scroll_area = QWidget(self.scroll_area)
+        self.scroll_area.setWidget(self.widget_in_scroll_area)
+        self.layout_ = QVBoxLayout(self.widget_in_scroll_area)
+
+        self.setWindowTitle('设置')
+        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+
+        self.token_manager = TokenManager(self.widget_in_scroll_area)
+        self.layout_.addWidget(self.token_manager)
+        self.layout_.addWidget(HorizontalLine(self.widget_in_scroll_area))
+
+        self.auto_login_control = AutoLoginControl(self.widget_in_scroll_area)
+        self.layout_.addWidget(self.auto_login_control)
+        self.layout_.addWidget(HorizontalLine(self.widget_in_scroll_area))
+
 class ChessPuzzleViewer(QMainWindow):
     def __init__(self, puzzle_data):
         raise RuntimeError('该组件暂时不稳定，还属于内测阶段，暂时无法使用')
 
+'''
+等到启用的时候会删掉上面这个报错信息，以下代码会去掉字符串
         super().__init__()
         self.puzzle_data = puzzle_data
         self.board = chess.Board()
@@ -547,59 +639,4 @@ PGN走法数: {len(self.move_history)}
 解走法数: {len(self.solution_moves)}
         """
         self.info_text.setText(info.strip())
-
-class ErrorMessageBox(QDialog):
-    """
-    自定义错误信息展示消息框
-    
-    参数:
-        file_name: 错误发生文件名 (str)
-        line_number: 错误发生行号 (int)
-        error_type: 错误类型 (str)
-        error_message: 错误信息 (str)
-        title: 窗口标题 (str, 默认: "错误")
-    """
-    
-    def __init__(self, file_name:str, line_number:int, error_type:str, error_message:str, title:str="错误", parent:QWidget|None=None):
-        super().__init__(parent)
-        self.layout_ = QFormLayout(self)
-
-        self.setWindowTitle(title)
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
-
-        self.file_name = file_name
-        self.line_number = str(line_number)
-        self.error_type = error_type
-        self.error_message = error_message
-
-        self.layout_.addRow('文件名称',QLabel(self.file_name))
-        self.layout_.addRow('第几行',QLabel(self.line_number))
-        self.layout_.addRow('报错类型',QLabel(self.error_type))
-        self.layout_.addRow('报错信息',QLabel(self.error_message))
-
-        self.button_1 = QPushButton(
-            '复制',
-            self
-        )
-
-        self.button_2 = QPushButton(
-            '完成',
-            self
-        )
-
-        self.button_1.clicked.connect(self.copy_info_to_clipboard)
-        self.button_2.clicked.connect(self.accept)
-        self.layout_.addRow(self.button_1,self.button_2)
-
-    def copy_info_to_clipboard(self):
-        clipboard = QApplication.clipboard()
-        clipboard.setText(
-            f'''
-            报错日志
-            ------------------------------
-            文件名称：{self.file_name}
-            第几行：{self.line_number}
-            报错类型：{self.error_type}
-            报错信息：{self.error_message}
-            '''
-        )
+'''
