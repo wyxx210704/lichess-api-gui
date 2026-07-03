@@ -1,4 +1,4 @@
-# lichess-api-gui，版本1.9
+# lichess-api-gui，版本1.11
 - 本项目为wyxx210704原创项目，继承此项目请遵循MIT协议
 - 主要功能：为lichess api添加一个图形界面，方便控制
 
@@ -14,9 +14,29 @@
 ### python要求
 - **绝对不能**是python**3.14**，不然运行时候一登录，json就起冲突
 - 建议**python3.13**，不仅能保持最新，而且又不会出现依赖冲突
-- 必须有这两个库
-    - PyQt6
-    - berserk
+- 必须有这几个库
+```
+Package            Version
+------------------ -----------
+berserk            0.14.0
+certifi            2026.6.17
+charset-normalizer 3.4.7
+chess              1.11.2
+Deprecated         1.3.1
+idna               3.18
+ndjson             0.3.1
+pip                26.1.2
+PyQt6              6.11.0
+PyQt6-Qt6          6.11.1
+PyQt6_sip          13.11.1
+python-chess       1.999
+python-dateutil    2.9.0.post0
+requests           2.34.2
+six                1.17.0
+typing_extensions  4.15.0
+urllib3            2.7.0
+wrapt              2.2.2
+```
 - 满足了以上要求即可运行
 ### 运行方式
 windows双击该项目跟目录的`run.bat`即可运行
