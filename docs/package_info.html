@@ -114,71 +114,64 @@
 <body>
     <div class="glass-card">
         <h1>lichess-api-gui配套文档</h1>
-        <h2>当前页面：首页</h2>
+        <h2>当前页面：依赖库具体信息</h2>
 
         <p>这里有些选项可以提供切换别的页面</p>
         <blockquote class="md-quote">
-            <a class="glass-btn" href="package_info.html">依赖库具体信息</a><br>
+            <a class="glass-btn" href="index.html">首页</a><br>
             <a class="glass-btn" href="gui_info.html">界面功能指引</a><br>
             <a class="glass-btn" href="update_log.html">更新日志</a><br>
         </blockquote>
         <hr>
 
-        <h1>项目介绍</h1>
-        <ul>
-            <li>本项目为wyxx210704原创项目，继承此项目请遵循MIT协议</li>
-            <li>主要功能：为lichess api添加一个图形界面，方便控制</li>
-        </ul>
+        <p>安装这些包用的命令</p><br>
+        <code class="custom-code">
+            pip install PyQt6
+            pip install berserk
+            pip install python-chess
+        </code>
 
-        <h1>使用教程</h1>
-        <h2>一、为自己的账号添加API访问令牌（token）</h2>
-        <ol>
-            <li>先填好令牌（token）描述，只要能让自己记住就行</li>
-            <li>按需要勾选令牌（token）可执行的功能</li>
-            <li>滑到底部，点右下角创建按钮，即可创建</li>
-        </ol>
-        <a class="glass-btn" href="https://lichess.org/account/oauth/token/create" target="_blank">点此按钮进入网站</a>
+        <p>python-chess信息</p>
+        <code class="custom-code">
+            Name: python-chess
+            Version: 1.999
+            Summary: A chess library with move generation, move validation, and support for common formats.
+            Home-page: https://github.com/niklasf/python-chess
+            Author: Niklas Fiekas
+            Author-email: niklas.fiekas@backscattering.de
+            License: GPL-3.0+
+            Location: E:\Users\37964\AppData\Local\Programs\Python\Python313\Lib\site-packages
+            Requires: chess
+            Required-by:
+        </code>
 
-        <h2>二、运行程序</h2>
-        <h3>python要求</h3>
-        <ul>
-            <li><b>绝对不能</b>是python<b>3.14</b>，不然运行时候一登录，json就起冲突</li>
-            <li>建议<b>python3.13</b>，不仅能保持最新，而且又不会出现依赖冲突</li>
-            <li>
-                必须有这几个库
-                <br>
-                <ul>
-                    <li>PyQt6</li>
-                    <li>python-chess</li>
-                    <li>berserk</li>
-                </ul>
-            </li>
-            <li>满足以上要求即可运行</li>
-        </ul>
+        <p>PyQt6信息</p>
+        <code class="custom-code">
+            Name: PyQt6
+            Version: 6.11.0
+            Summary: Python bindings for the Qt cross platform application toolkit
+            Home-page: https://www.riverbankcomputing.com/software/pyqt/
+            Author:
+            Author-email: Riverbank Computing Limited <info@riverbankcomputing.com>
+            License-Expression: GPL-3.0-only
+            Location: E:\Users\37964\AppData\Local\Programs\Python\Python313\Lib\site-packages
+            Requires: PyQt6-Qt6, PyQt6-sip
+            Required-by:
+        </code>
 
-        <h3>运行方式</h3>
-        <p>
-            windows双击该项目根目录的<code>run.bat</code>即可运行<br>
-            macos/linux双击该项目根目录的<code>run.sh</code>即可运行<br>
-
-            macos/linux用户在运行前需要<b>额外添加执行权限</b><br>
-            <code class="custom-code">chmod +x run.sh</code>
-        </p>
-
-        <h3>运行结果</h3>
-        <p>
-            在运行过程中，每一个向API发送请求的操作都要等待两三秒，这两三秒内，<b>请不要动窗口</b>，不然就会搞未响应<br>
-            <br>
-            首先会弹出一个登录窗口，然后就把前文提到的token输入进去，再点下面登录按钮就能登录<br>
-            <img src="1778217ca0117b161b85aa442c8915b2.png"><br>
-            登录成功时会自动跳转到主窗口，登录失败就会放出报错的原因并且不会跳转，保留在这个对话框<br>
-            以下是主窗口<br>
-            <img src="18dba1d1e586147bff12b540121b8122.png">
-        </p>
-        <ul>
-            <li>菜单栏中是已经更新好的各个API请求</li>
-            <li>请求返回的内容都会显示在下面这个树形组件里面</li>
-        </ul>
+        <p>berserk信息</p>
+        <code class="custom-code">
+            Name: berserk
+            Version: 0.14.0
+            Summary: Python client for the lichess API
+            Home-page: https://github.com/lichess-org/berserk
+            Author:
+            Author-email: Lichess <contact@lichess.org>
+            License: GPL-3.0-or-later
+            Location: E:\Users\37964\AppData\Local\Programs\Python\Python313\Lib\site-packages
+            Requires: deprecated, ndjson, python-dateutil, requests, typing-extensions
+            Required-by:
+        </code>
     </div>
 </body>
 </html>

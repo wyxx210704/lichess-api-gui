@@ -1,4 +1,5 @@
 <h1>lichess-api-gui，版本1.12</h1>
+<a href="https://wyxx210704.github.io/lichess-api-gui/" target="_blank">点这里查看完整文档</a>
 
 <h1>项目介绍</h1>
 <ul>

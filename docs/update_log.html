@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: url('https://picsum.photos/1920/1080') center/cover fixed;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+    
+        .glass-card {
+            padding: 32px;
+            
+        
+            background: rgba(255, 255, 255, 0);
+            
+            
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .glass-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 60px;          /* 圆润的胶囊形状 */
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s ease;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+
+            /* 让按钮与面板风格统一：透明玻璃 + 模糊 + 微光 */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.12);  /* 半透明白，和面板一致 */
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            }
+
+        /* 悬停效果：更亮、轻微上浮 */
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* 点击反馈 */
+        .glass-btn:active {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-code {
+            display: block;                /* 让背景、边框完整包裹内容 */
+            white-space: pre-wrap;         /* 保留换行，自动折行 */
+            word-break: break-word;        /* 长文本/URL 安全断行 */
+            font-size: 0.9rem;
+            line-height: 1.6;
+            padding: 1.5rem 1.8rem;
+            border-radius: 14px;
+
+            /* 灰色半透明背景 — 略带磨砂感，与毛玻璃呼应 */
+            background: rgba(53, 53, 53, 0.336);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+
+            /* 边框 — 清晰可见，但不过分抢眼 */
+            border: 1px solid rgba(220, 220, 240, 0.35);
+            border-left: 4px solid rgba(255, 255, 255, 0.5);  /* 左边缘点缀，增加层次 */
+
+            /* 文本颜色微调，在灰色背景上更易读 */
+            color: #f0f3fa;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+            /* 滚动 / 溢出 */
+            overflow-x: auto;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08);
+            transition: background 0.2s;
+        }
+
+        .md-quote {
+            margin: 0 0 1em 0;      /* 去除默认缩进，保留上下边距 */
+            padding: 0 0 0 1em;     /* 内部左边距，让文字不紧贴竖线 */
+            border-left: 4px solid #ddd; /* 经典的灰色左侧竖线 */
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <h1>lichess-api-gui配套文档</h1>
+        <h2>当前页面：更新日志</h2>
+
+        <p>这里有些选项可以提供切换别的页面</p>
+        <blockquote class="md-quote">
+            <a class="glass-btn" href="index.html">首页</a><br>
+            <a class="glass-btn" href="gui_info.html">界面功能指引</a><br>
+            <a class="glass-btn" href="package_info.html">依赖库具体信息</a><br>
+        </blockquote>
+        <hr>
+
+        <h1>未来计划版本</h1>
+
+        <h2>2.0-ready版本（下一版本）</h2>
+        <blockquote class="md-quote">
+            添加工具【跳转到下棋页面】，会根据账号类型去选择bot专区以及人类专区
+            <br>
+            完善接口为2.0版本做准备
+        </blockquote>
+
+        <h2>2.0-beta*版本（远期计划）</h2>
+        <blockquote class="md-quote">
+            逐步新增人类专区功能
+        </blockquote>
+
+        <h2>3.0-beta*版本（远期计划）</h2>
+        <blockquote class="md-quote">
+            逐步新增bot专区功能
+        </blockquote>
+
+        <h1>已更新的版本</h1>
+
+        <h2>1.12版本（当前版本）（更新日期2026.7.4）</h2>
+        <blockquote class="md-quote">
+            为配置文件增加类型注解
+            <br>
+            events.py函数分为三大类型分别放在三个代码中
+
+            <blockquote class="md-quote">
+                input_dialogs专门用来存放输入对话框
+                <br>
+                sub_window专门用来存放会开子窗口的函数
+                <br>
+                business_logic专门存放业务逻辑函数
+            </blockquote>
+        </blockquote>
+
+        <h2>1.11版本（更新日期2026.7.3）</h2>
+        <blockquote class="md-quote">
+            修复配置文件修改逻辑，为后面3.0做准备
+            <br>
+            增加`更多`菜单，预留跳转接口为2.0-ready版本做准备
+            <br>
+            增加自动登录功能
+            <br>
+            `更多`菜单增加设置功能，可设置【管理token】和自动登录的开关
+            <br>
+            修复【在大厅中创建对局】功能实现的bug
+            <br>
+            【在大厅中创建对局】由于会长时间阻塞，所以把它挪到了线程执行
+        </blockquote>
+
+        <h2>1.10版本（更新日期2026.7.3）</h2>
+        <blockquote class="md-quote">
+            添加工具【谜题查看器】，由于当前不稳定所以暂时不对外开放使用
+            <br>
+            优化错误信息显示，让错误信息更完善
+        </blockquote>
+
+        <h2>1.9版本（更新日期2026.7.2）</h2>
+        <blockquote class="md-quote">
+            为已有功能添加快捷键
+        </blockquote>
+
+        <h2>1.8版本（更新日期2026.7.2）</h2>
+        <blockquote class="md-quote">
+            优化页面中文翻译
+            <br>
+            为所有json添加翻译
+            <br>
+            修复【对局查看器】启动时的报错捕获
+        </blockquote>
+
+        <h2>1.7版本（更新日期2026.7.1）</h2>
+        <blockquote class="md-quote">
+            添加工具【管理token】，把常用token放进配置文件里
+        </blockquote>
+
+        <h2>1.6版本（更新日期2026.7.1）</h2>
+        <blockquote class="md-quote">
+            优化登陆过程，从零散对话框到整合成向导
+            <br>
+            修复【在大厅中创建对局】功能bug
+            <br>
+            为下一版本【管理token】工具留出准备
+        </blockquote>
+
+        <h2>1.5版本（更新日期2026.6.28）</h2>
+        <blockquote class="md-quote">
+            优化代码结构，将1.4版本对局查看器相关内容以及之前的一些基本功能进行整理封装，功能与结构更清晰，一目了然
+            <br>
+            图标分离到单独文件夹，与后面1.7版本更新的配置文件放一起
+            <br>
+            把登录过程封装为函数，方便后面2.0版本会用到同一个逻辑
+        </blockquote>
+
+        <h2>1.4版本（更新日期2026.6.28）</h2>
+        <h3>功能更新</h3>
+        <blockquote class="md-quote">
+            增加`对局`功能，对应berserk.Client().games
+            <br>
+            widgets.py增加组件：对局查看器（会开独立窗口）
+        </blockquote>
+        <h3>由于版本早期比较不稳定所以在同一天进行了bug修复</h3>
+        <blockquote class="md-quote">
+            修复窗口关闭时还存在在列表的问题
+            <br>
+            修复svg棋盘无法缩放的问题
+        </blockquote>
+
+        <h2>1.3版本（更新日期2026.6.27）</h2>
+        <blockquote class="md-quote">
+            增加`挑战`功能，对应berserk.Client().challenges
+            <br>
+            增加`谜题`功能，对应berserk.Client().puzzles
+        </blockquote>
+
+        <h2>1.2版本（更新日期2026.6.26）</h2>
+        <blockquote class="md-quote">
+            优化登录流程
+            <br>
+            增加`谜题`功能，对应berserk.Client().puzzles
+        </blockquote>
+
+        <h2>1.1版本（更新日期2026.6.26）</h2>
+        <blockquote class="md-quote">
+            增加组件（events.py）
+            <br>
+            优化了登录时的线程管理
+            <br>
+            增加`查询用户`功能，对应berserk.Client().users
+        </blockquote>
+
+        <h2>1.0版本（第一个发布版本）（更新日期2026.6.23）</h2>
+        <blockquote class="md-quote">
+            lichess-api-gui项目正式成立
+            <br>
+            增加组件（LoginDialog和JsonTreeWidget）
+            <br>
+            增加`账号`功能，对应berserk.Client().account
+        </blockquote>
+    </div>
+</body>
+</html>
