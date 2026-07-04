@@ -8,6 +8,7 @@ import chess
 import chess.svg
 
 from widgets import *
+from config_format import load_config_with_format
 from thread_worker import GameViewerWorker
 
 class GameViewer(QWidget):
@@ -185,12 +186,7 @@ class LoginWizard(QWizard):
         self.page_2_layout = QVBoxLayout(self.page_2)
         self.page_2_layout.addWidget(QLabel('请在下方输入token，或者从列表中选择'))
 
-        self.tokens = load(open(
-            '../configuration_and_resources/config.json',
-            'r',
-            encoding='utf-8',
-            errors='ignore',
-        ))['tokens']
+        self.tokens = load_config_with_format()['tokens']
 
         self.tokens_list = QListWidget(self.page_2)
         self.tokens_list.addItems([name for name in self.tokens.keys()])

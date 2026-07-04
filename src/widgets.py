@@ -5,6 +5,8 @@ from json import *
 import os
 
 from translates import *
+from config_format import load_config_with_format
+
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):
         super().__init__(parent)
@@ -243,14 +245,13 @@ class TokenManager(QWidget):
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             
             if os.path.exists(self.config_path):
-                with open(self.config_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    self.full_config = load(f)
-                    # 提取 tokens 数据
-                    if 'tokens' in self.full_config:
-                        self.tokens_data = self.full_config['tokens']
-                    else:
-                        self.tokens_data = {}
-                        self.full_config['tokens'] = self.tokens_data
+                self.full_config = load_config_with_format()
+                # 提取 tokens 数据
+                if 'tokens' in self.full_config:
+                    self.tokens_data = self.full_config['tokens']
+                else:
+                    self.tokens_data = {}
+                    self.full_config['tokens'] = self.tokens_data
             else:
                 # 如果文件不存在，创建默认配置
                 self.full_config = {'tokens': {}}
@@ -378,12 +379,7 @@ class AutoLoginControl(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.layout_ = QVBoxLayout(self)
-        self.config = load(open(
-            '../configuration_and_resources/config.json',
-            'r',
-            encoding='utf-8',
-            errors='ignore',
-        ))
+        self.config = load_config_with_format()
 
         self.group_box = QGroupBox(
             '是否自动登录',
