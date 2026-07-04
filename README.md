@@ -1,57 +1,57 @@
-# lichess-api-gui，版本1.12
-- 本项目为wyxx210704原创项目，继承此项目请遵循MIT协议
-- 主要功能：为lichess api添加一个图形界面，方便控制
+<h1>lichess-api-gui，版本1.12</h1>
 
-# 使用教程
-## 一、为自己的账号添加API访问令牌（token）
-1. 先进入[此页面](https://lichess.org/account/oauth/token)，点右上角+按钮，然后就会进入以下页面
-![image.png](https://api.keepwork.com/ts-storage/siteFiles/49798/raw#1782219326915image.png)
-2. 先填好令牌（token）描述，只要能让自己记住就行
-3. 按需要勾选令牌（token）可执行的功能
-4. 滑到底部，点右下角创建按钮，即可创建
+<h1>项目介绍</h1>
+<ul>
+    <li>本项目为wyxx210704原创项目，继承此项目请遵循MIT协议</li>
+    <li>主要功能：为lichess api添加一个图形界面，方便控制</li>
+</ul>
 
-## 二、运行程序
-### python要求
-- **绝对不能**是python**3.14**，不然运行时候一登录，json就起冲突
-- 建议**python3.13**，不仅能保持最新，而且又不会出现依赖冲突
-- 必须有这几个库
-```
-Package            Version
------------------- -----------
-berserk            0.14.0
-certifi            2026.6.17
-charset-normalizer 3.4.7
-chess              1.11.2
-Deprecated         1.3.1
-idna               3.18
-ndjson             0.3.1
-pip                26.1.2
-PyQt6              6.11.0
-PyQt6-Qt6          6.11.1
-PyQt6_sip          13.11.1
-python-chess       1.999
-python-dateutil    2.9.0.post0
-requests           2.34.2
-six                1.17.0
-typing_extensions  4.15.0
-urllib3            2.7.0
-wrapt              2.2.2
-```
-- 满足了以上要求即可运行
-### 运行方式
-windows双击该项目跟目录的`run.bat`即可运行
-macos/linux双击该项目根目录的`run.sh`即可运行
+<h1>使用教程</h1>
+<h2>一、为自己的账号添加API访问令牌（token）</h2>
+<ol>
+    <li>先填好令牌（token）描述，只要能让自己记住就行</li>
+    <li>按需要勾选令牌（token）可执行的功能</li>
+    <li>滑到底部，点右下角创建按钮，即可创建</li>
+</ol>
+<a href="https://lichess.org/account/oauth/token/create" target="_blank">点此按钮进入网站</a>
 
-macos/linux用户在运行前需要**额外添加执行权限**
-`chmod +x run.sh`
-### 运行结果
-在运行过程中，每一个向API发送请求的操作都要等待两三秒，这两三秒内，**请不要动窗口**，不然就会搞未响应
+<h2>二、运行程序</h2>
+<h3>python要求</h3>
+<ul>
+    <li><b>绝对不能</b>是python<b>3.14</b>，不然运行时候一登录，json就起冲突</li>
+    <li>建议<b>python3.13</b>，不仅能保持最新，而且又不会出现依赖冲突</li>
+    <li>
+        必须有这几个库
+        <br>
+        <ul>
+            <li>PyQt6</li>
+            <li>python-chess</li>
+            <li>berserk</li>
+        </ul>
+    </li>
+    <li>满足以上要求即可运行</li>
+</ul>
 
-首先会弹出一个登录窗口，然后就把前文提到的token输入进去，再点下面登录按钮就能登录
-登录成功时会自动跳转到主窗口，登录失败就会放出报错的原因并且不会跳转，保留在这个对话框
-![image.png](https://api.keepwork.com/ts-storage/siteFiles/49799/raw#1782222527843image.png)
-然后会跳转到主页面
-![image.png](https://api.keepwork.com/ts-storage/siteFiles/49800/raw#1782222745893image.png)
+<h3>运行方式</h3>
+<p>
+    windows双击该项目根目录的<code>run.bat</code>即可运行<br>
+    macos/linux双击该项目根目录的<code>run.sh</code>即可运行<br>
 
-- 菜单栏中是已经更新好的各个API请求
-- 请求返回的内容都会显示在下面这个树形组件里面
+    macos/linux用户在运行前需要<b>额外添加执行权限</b><br>
+    <code>chmod +x run.sh</code>
+</p>
+
+<h3>运行结果</h3>
+<p>
+    在运行过程中，每一个向API发送请求的操作都要等待两三秒，这两三秒内，<b>请不要动窗口</b>，不然就会搞未响应<br>
+    <br>
+    首先会弹出一个登录窗口，然后就把前文提到的token输入进去，再点下面登录按钮就能登录<br>
+    <img src="1778217ca0117b161b85aa442c8915b2.png"><br>
+    登录成功时会自动跳转到主窗口，登录失败就会放出报错的原因并且不会跳转，保留在这个对话框<br>
+    以下是主窗口<br>
+    <img src="18dba1d1e586147bff12b540121b8122.png">
+</p>
+<ul>
+    <li>菜单栏中是已经更新好的各个API请求</li>
+    <li>请求返回的内容都会显示在下面这个树形组件里面</li>
+</ul>

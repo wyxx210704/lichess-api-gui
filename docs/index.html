@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: url('https://picsum.photos/1920/1080') center/cover fixed;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+    
+        .glass-card {
+            padding: 32px;
+            
+        
+            background: rgba(255, 255, 255, 0);
+            
+            
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .glass-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 60px;          /* 圆润的胶囊形状 */
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s ease;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+
+            /* 让按钮与面板风格统一：透明玻璃 + 模糊 + 微光 */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.12);  /* 半透明白，和面板一致 */
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            }
+
+        /* 悬停效果：更亮、轻微上浮 */
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* 点击反馈 */
+        .glass-btn:active {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-code {
+            display: block;                /* 让背景、边框完整包裹内容 */
+            white-space: pre-wrap;         /* 保留换行，自动折行 */
+            word-break: break-word;        /* 长文本/URL 安全断行 */
+            font-size: 0.9rem;
+            line-height: 1.6;
+            padding: 1.5rem 1.8rem;
+            border-radius: 14px;
+
+            /* 灰色半透明背景 — 略带磨砂感，与毛玻璃呼应 */
+            background: rgba(53, 53, 53, 0.336);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+
+            /* 边框 — 清晰可见，但不过分抢眼 */
+            border: 1px solid rgba(220, 220, 240, 0.35);
+            border-left: 4px solid rgba(255, 255, 255, 0.5);  /* 左边缘点缀，增加层次 */
+
+            /* 文本颜色微调，在灰色背景上更易读 */
+            color: #f0f3fa;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+            /* 滚动 / 溢出 */
+            overflow-x: auto;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08);
+            transition: background 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <h1>lichess-api-gui配套文档</h1>
+        <h2>当前页面：首页</h2>
+        
+        <hr>
+
+        <h1>项目介绍</h1>
+        <ul>
+            <li>本项目为wyxx210704原创项目，继承此项目请遵循MIT协议</li>
+            <li>主要功能：为lichess api添加一个图形界面，方便控制</li>
+        </ul>
+
+        <h1>使用教程</h1>
+        <h2>一、为自己的账号添加API访问令牌（token）</h2>
+        <ol>
+            <li>先填好令牌（token）描述，只要能让自己记住就行</li>
+            <li>按需要勾选令牌（token）可执行的功能</li>
+            <li>滑到底部，点右下角创建按钮，即可创建</li>
+        </ol>
+        <a class="glass-btn" href="https://lichess.org/account/oauth/token/create" target="_blank">点此按钮进入网站</a>
+
+        <h2>二、运行程序</h2>
+        <h3>python要求</h3>
+        <ul>
+            <li><b>绝对不能</b>是python<b>3.14</b>，不然运行时候一登录，json就起冲突</li>
+            <li>建议<b>python3.13</b>，不仅能保持最新，而且又不会出现依赖冲突</li>
+            <li>
+                必须有这几个库
+                <br>
+                <ul>
+                    <li>PyQt6</li>
+                    <li>python-chess</li>
+                    <li>berserk</li>
+                </ul>
+            </li>
+            <li>满足以上要求即可运行</li>
+        </ul>
+
+        <h3>运行方式</h3>
+        <p>
+            windows双击该项目根目录的<code>run.bat</code>即可运行<br>
+            macos/linux双击该项目根目录的<code>run.sh</code>即可运行<br>
+
+            macos/linux用户在运行前需要<b>额外添加执行权限</b><br>
+            <code class="custom-code">chmod +x run.sh</code>
+        </p>
+
+        <h3>运行结果</h3>
+        <p>
+            在运行过程中，每一个向API发送请求的操作都要等待两三秒，这两三秒内，<b>请不要动窗口</b>，不然就会搞未响应<br>
+            <br>
+            首先会弹出一个登录窗口，然后就把前文提到的token输入进去，再点下面登录按钮就能登录<br>
+            <img src="1778217ca0117b161b85aa442c8915b2.png"><br>
+            登录成功时会自动跳转到主窗口，登录失败就会放出报错的原因并且不会跳转，保留在这个对话框<br>
+            以下是主窗口<br>
+            <img src="18dba1d1e586147bff12b540121b8122.png">
+        </p>
+        <ul>
+            <li>菜单栏中是已经更新好的各个API请求</li>
+            <li>请求返回的内容都会显示在下面这个树形组件里面</li>
+        </ul>
+    </div>
+</body>
+</html>
