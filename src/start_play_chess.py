@@ -1,8 +1,13 @@
-from PyQt6.QtWidgets import QMessageBox
+from bot import BotMain
+from board import BoardMain
 
-def turn_from_main():
-    QMessageBox.information(
-        None,
-        '提示',
-        '功能将在下一版本更新',
-    )
+window_list = []
+def turn_from_main(is_bot:bool):
+    if is_bot:
+        window = BotMain()
+    else:
+        window = BoardMain()
+
+    window_list.append(window)
+    window.destroyed.connect(lambda:window_list.remove(window))
+    window.show()

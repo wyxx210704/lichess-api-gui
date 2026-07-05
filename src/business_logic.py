@@ -2,9 +2,18 @@ from berserk import *
 import sys
 from typing import Callable
 from PyQt6.QtWidgets import *
+from json import load
 
 from tools import LoginWizard,ErrorMessageBox
-from config_format import load_config_with_format
+from config_format import ConfigFormat
+
+def load_config_with_format() -> ConfigFormat:
+    return load(open(
+        '../configuration_and_resources/config.json',
+        'r',
+        encoding='utf-8',
+        errors='ignore',
+    ))
 
 def login():
     try:auto_login = load_config_with_format()['auto_login']['enable']

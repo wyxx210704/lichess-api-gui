@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from berserk import *
+import os.path
 
 from widgets import JsonTreeWidget
 from start_play_chess import turn_from_main
@@ -16,11 +17,11 @@ token,is_bot = login()
 
 client = Client(TokenSession(token))
 window = QMainWindow()
-window.setMinimumSize(700,400)
+window.setMinimumWidth(400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本1.11'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本2.0-ready'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -308,12 +309,12 @@ game_menu.addAction(import_game)
 
 turn_to_play_chess = QAction('跳转到下棋')
 turn_to_play_chess.setShortcut('Ctrl+Shift+M, T')
-turn_to_play_chess.triggered.connect(turn_from_main)
+turn_to_play_chess.triggered.connect(lambda:turn_from_main(is_bot))
 more_menu.addAction(turn_to_play_chess)
 
 settings = QAction('设置')
 settings.setShortcut('Ctrl+Shift+M, S')
-settings.triggered.connect(start_sittings)
+settings.triggered.connect(lambda:start_sittings(client))
 more_menu.addAction(settings)
 
 window.show()

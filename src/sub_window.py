@@ -6,9 +6,9 @@ from thread_worker import CreateGameWorker
 sub_window_list = []
 thread_list = []
 
-def start_sittings():
+def start_sittings(client:Client):
     try:
-        window = SettingsWindow()
+        window = SettingsWindow(client)
         sub_window_list.append(window)#为了防止函数运行结束时窗口自动关闭
         window.destroyed.connect(lambda:sub_window_list.remove(window))
         window.show()

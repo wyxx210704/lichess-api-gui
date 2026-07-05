@@ -1,4 +1,4 @@
-<h1>lichess-api-gui，版本1.12</h1>
+<h1>lichess-api-gui，版本2.0-ready</h1>
 <a href="https://wyxx210704.github.io/lichess-api-gui/" target="_blank">点这里查看完整文档</a>
 
 <h1>项目介绍</h1>
@@ -47,10 +47,10 @@
     在运行过程中，每一个向API发送请求的操作都要等待两三秒，这两三秒内，<b>请不要动窗口</b>，不然就会搞未响应<br>
     <br>
     首先会弹出一个登录窗口，然后就把前文提到的token输入进去，再点下面登录按钮就能登录<br>
-    <img src="1778217ca0117b161b85aa442c8915b2.png"><br>
+    <img src="docs/1778217ca0117b161b85aa442c8915b2.png"><br>
     登录成功时会自动跳转到主窗口，登录失败就会放出报错的原因并且不会跳转，保留在这个对话框<br>
     以下是主窗口<br>
-    <img src="18dba1d1e586147bff12b540121b8122.png">
+    <img src="docs/18dba1d1e586147bff12b540121b8122.png">
 </p>
 <ul>
     <li>菜单栏中是已经更新好的各个API请求</li>
