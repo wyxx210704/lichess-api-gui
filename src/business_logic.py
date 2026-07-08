@@ -15,6 +15,11 @@ def load_config_with_format() -> ConfigFormat:
         errors='ignore',
     ))
 
+def login_with_wizard():
+    login_dialog = LoginWizard()
+    if login_dialog.exec() == QDialog.DialogCode.Accepted:return login_dialog.get_info()
+    else:exit()
+
 def login():
     try:auto_login = load_config_with_format()['auto_login']['enable']
     except Exception as error:
@@ -23,27 +28,16 @@ def login():
 
     if auto_login:
         try:
-            token = load_config_with_format()['auto_login']['token']
-            user_info = Client(TokenSession(token)).account.get()
+            client = Client(TokenSession(load_config_with_format()['auto_login']['token']))
+            user_info = client.account.get()
         except Exception as error:
-            show_error_dialog(*get_error_details(error),'登录失败')
-
-            login_dialog = LoginWizard()
-            if login_dialog.exec() == QDialog.DialogCode.Accepted:
-                return login_dialog.get_info()
-            else:exit()
+            show_error_dialog(*get_error_details(error),'自动登录失败')
+            return login_with_wizard()
         else:
-            if ('title' in user_info) and (user_info['title'] == 'BOT'):
-                is_bot = True
-            else:
-                is_bot = False
-
-            return token,is_bot
-    else:
-        login_dialog = LoginWizard()
-        if login_dialog.exec() == QDialog.DialogCode.Accepted:
-            return login_dialog.get_info()
-        else:exit()
+            if ('title' in user_info) and (user_info['title'] == 'BOT'):is_bot = True
+            else:is_bot = False
+            return client,is_bot
+    else:return login_with_wizard()
 
 def run_function(progress_bar:QProgressBar,func:Callable):
     progress_bar.setValue(0)

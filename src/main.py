@@ -13,9 +13,8 @@ qt_translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPa
 qm_file_path = os.path.join(qt_translations_path, "qt_zh_CN.qm")
 
 if translator.load(qm_file_path):app.installTranslator(translator)
-token,is_bot = login()
+client,is_bot = login()
 
-client = Client(TokenSession(token))
 window = QMainWindow()
 window.setMinimumWidth(400)
 menu_bar = window.menuBar()
@@ -309,7 +308,7 @@ game_menu.addAction(import_game)
 
 turn_to_play_chess = QAction('跳转到下棋')
 turn_to_play_chess.setShortcut('Ctrl+Shift+M, T')
-turn_to_play_chess.triggered.connect(lambda:turn_from_main(is_bot))
+turn_to_play_chess.triggered.connect(lambda:turn_from_main(client,is_bot))
 more_menu.addAction(turn_to_play_chess)
 
 settings = QAction('设置')

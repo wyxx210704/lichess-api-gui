@@ -166,7 +166,7 @@ class LoginWizard(QWizard):
         ))
 
     def select_from_the_list(self,item:QListWidgetItem):self.token_input.setText(self.tokens[item.text()])
-    def get_info(self):return self.token,self.is_bot
+    def get_info(self):return Client(TokenSession(self.token)),self.is_bot
 
     def token_creation_guidelines(self):
         self.page_1 = QWizardPage(self)
