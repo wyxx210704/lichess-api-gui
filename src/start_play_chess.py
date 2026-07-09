@@ -10,7 +10,7 @@ from business_logic import login
 window_list = []
 def choice_window(client:Client,is_bot:bool):#client参数以后才会用得到
     if is_bot:return BotMain()
-    else:return BoardMain()
+    else:return BoardMain(client)
 
 def turn_from_main(client:Client,is_bot:bool):
     window = choice_window(client,is_bot)

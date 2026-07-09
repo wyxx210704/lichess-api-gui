@@ -1,3 +1,7 @@
 {
-    "tokens": {}
+    "tokens": {},
+    "auto_login":{
+        "enable": false,
+        "token": ""
+    }
 }

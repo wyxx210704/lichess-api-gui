@@ -109,6 +109,71 @@
             padding: 0 0 0 1em;     /* 内部左边距，让文字不紧贴竖线 */
             border-left: 4px solid #ddd; /* 经典的灰色左侧竖线 */
         }
+
+        .custom-table {
+            width: 100%;
+            max-width: 700px;
+            border-collapse: collapse;      /* 边框合并，让白色边框干净利落 */
+            background: transparent;        /* 表格本身无背景，完全透明 */
+            border: 2px solid white;        /* 表格外边框为白色，2px 粗细，可调 */
+            border-radius: 16px;            /* 圆角外边框 (仅对表格生效，border-collapse:collapse 会裁剪圆角，但边框效果依然清爽) */
+            overflow: hidden;               /* 配合圆角，让内部直角被裁剪 (非必须) */
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); /* 可选：外发光强调白色边框，非必须 */
+        }
+
+        /* 单元格 —— 无背景，白色边框 */
+        .custom-table th,
+        .custom-table td {
+            background: transparent;        /* 关键：完全透明背景，无任何颜色 */
+            border: 1.5px solid white;      /* 内部单元格白色边框，粗细稍细，突出层次 */
+            padding: 16px 20px;
+            text-align: left;
+            color: #f0f4fa;                 /* 文字使用浅色，在透明背景上清晰可见 */
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            transition: all 0.15s ease;
+        }
+
+        /* 表头稍加风格，但依然透明无背景 */
+        .custom-table th {
+            font-weight: 600;
+            color: #ffffff;
+            border-bottom: 2.5px solid white;  /* 表头下边框加粗，视觉层次 */
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: transparent;           /* 确保透明 */
+        }
+
+        /* 可选的悬停效果 —— 只改变文字或边框微光，不添加任何背景色 */
+        .custom-table tbody tr:hover {
+            background: transparent;           /* 悬停也不加背景，保持透明 */
+        }
+
+        .custom-table tbody tr:hover td {
+            background: transparent;           /* 确保悬停单元格无背景 */
+            border-color: rgba(255, 255, 255, 0.9); /* 微微提亮边框，增加交互感 (仍是白色系) */
+            color: #ffffff;
+        }
+
+        /* 针对第一列或特定行微调，保持透明 */
+        .custom-table .highlight-cell {
+            background: transparent;           /* 即使有类名，也强制透明 */
+            border-color: white;
+        }
+
+        /* 额外的边框微调，确保所有单元格边框统一白色 */
+        .custom-table tfoot td {
+            background: transparent;
+            border-top: 2.5px solid white;     /* 脚注上边框加粗 */
+            font-style: italic;
+            color: #d0dae6;
+        }
+
+        /* 如果浏览器支持，让表格更通透 */
+        .custom-table {
+            backdrop-filter: blur(0px);        /* 无模糊，保持完全透明 */
+        }
     </style>
 </head>
 <body>
@@ -159,11 +224,30 @@
 
         <h3>运行方式</h3>
         <p>
-            windows双击该项目根目录的<code>run.bat</code>即可运行<br>
-            macos/linux双击该项目根目录的<code>run.sh</code>即可运行<br>
+            windows双击该项目根目录的bat文件即可运行
+            macos/linux双击该项目根目录的sh文件即可运行
+        </p>
 
+        <h4>如果要运行主窗口的话就双击以run命名的文件</h4>
+        <table class="custom-table">
+            <tr>
+                <th>windows</th>
+                <th>macos/linux</th>
+            </tr>
+            <tr>
+                <td>run_main.bat</td>
+                <td>run_main.sh</td>
+            </tr>
+            <tr>
+                <td>run_play_chess.bat</td>
+                <td>run_play_chess.sh</td>
+            </tr>
+        </table>
+
+        <p>
             macos/linux用户在运行前需要<b>额外添加执行权限</b><br>
-            <code class="custom-code">chmod +x run.sh</code>
+            <code>chmod +x run_main.sh</code>
+            <code>chmod +x run_play_chess.sh</code>
         </p>
 
         <h3>运行结果</h3>

@@ -1,10 +1,19 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
+from berserk import Client
+from typing import Literal
+from functools import partial
+
+from tools import SettingsWindow
+from tools_for_play_chess import ChallengeWindow
 
 class BoardMain(QMainWindow):
-    def __init__(self):
+    def __init__(self,client:Client):
         super().__init__()
+        self.client = client
+        self.mdi_sub_window_list = []
+
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setMovable(True)
         self.setCentralWidget(self.tab_widget)
@@ -36,19 +45,35 @@ class BoardMain(QMainWindow):
 
         self.page_challenge()
         self.page_game()
-        self.test_action()
+        self.add_action()
+        self.add_sub_window()
 
-    def test_action(self):
-        self.action = QAction('测试')
-        self.action.triggered.connect(lambda:QMessageBox.information(self,
-        '恭喜你点开了彩蛋','下一版本的时候，将完善这个页面，下两个版本的时候，就要开始搞功能了'))
-        self.tool_bar.addAction(self.action)
+    def add_action(self):
+        self.challenge_action = QAction('发起挑战')
+        self.challenge_action.triggered.connect(lambda:self.add_sub_window(False,ChallengeWindow()))
+        self.tool_bar.addAction(self.challenge_action)
+
+        self.settings_action = QAction('设置')
+        self.settings_action.triggered.connect(lambda:self.add_sub_window(False,SettingsWindow(self.client)))
+        self.tool_bar.addAction(self.settings_action)
+
+    def add_sub_window(self,is_all:bool=True,window:QWidget|None=None):
+        type_summary = [
+            SettingsWindow(self.client),
+            ChallengeWindow(),
+        ]
+
+        if is_all:
+            for type_class in type_summary:
+                self.mdi_area.addSubWindow(type_class)
+        else:
+            self.mdi_area.addSubWindow(window).show()
 
     def page_challenge(self):
         self.challenge_page = QWidget(self.splitter)
         self.splitter.addWidget(self.challenge_page)
         self.vertical_layout_in_challenge_page = QVBoxLayout(self.challenge_page)
-        self.vertical_layout_in_challenge_page.addWidget(QLabel('挑战列表（暂未启用）'))
+        self.vertical_layout_in_challenge_page.addWidget(QLabel('收到的挑战列表（暂未启用）'))
 
         self.tree_widget_for_challenge = QTreeWidget(self.challenge_page)
         self.vertical_layout_in_challenge_page.addWidget(self.tree_widget_for_challenge)
@@ -76,7 +101,7 @@ class BoardMain(QMainWindow):
             [
                 '占位、',
                 '测试专用',
-                '两个版本之后',
+                '一个版本之后',
                 '才会更新功能',
                 '并且正式启用',
                 '/',
@@ -136,7 +161,7 @@ class BoardMain(QMainWindow):
             [
                 '占位、',
                 '测试专用',
-                '两个版本之后',
+                '一个版本之后',
                 '才会更新功能',
                 '并且正式启用',
                 '/',

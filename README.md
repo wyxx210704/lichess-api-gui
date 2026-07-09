@@ -1,4 +1,4 @@
-<h1>lichess-api-gui，版本2.0-ready</h1>
+<h1>lichess-api-gui，版本2.0</h1>
 <a href="https://wyxx210704.github.io/lichess-api-gui/" target="_blank">点这里查看完整文档</a>
 
 <h1>项目介绍</h1>
@@ -35,11 +35,30 @@
 
 <h3>运行方式</h3>
 <p>
-    windows双击该项目根目录的<code>run.bat</code>即可运行<br>
-    macos/linux双击该项目根目录的<code>run.sh</code>即可运行<br>
+    windows双击该项目根目录的bat文件即可运行
+    macos/linux双击该项目根目录的sh文件即可运行
+</p>
 
+<h4>如果要运行主窗口的话就双击以run命名的文件</h4>
+<table>
+    <tr>
+        <th>windows</th>
+        <th>macos/linux</th>
+    </tr>
+    <tr>
+        <td>run_main.bat</td>
+        <td>run_main.sh</td>
+    </tr>
+    <tr>
+        <td>run_play_chess.bat</td>
+        <td>run_play_chess.sh</td>
+    </tr>
+</table>
+
+<p>
     macos/linux用户在运行前需要<b>额外添加执行权限</b><br>
     <code>chmod +x run.sh</code>
+    <code>chmod +x run_play_chess.sh</code>
 </p>
 
 <h3>运行结果</h3>

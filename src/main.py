@@ -20,7 +20,7 @@ window.setMinimumWidth(400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本2.0-ready'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本2.0'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
