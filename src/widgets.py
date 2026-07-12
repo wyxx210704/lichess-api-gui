@@ -146,10 +146,24 @@ class NoStretchingSvgWidget(QSvgWidget):
         super().load(contents)
         self.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
 
-class InformationDisplay(QLineEdit):
+class StringDisplay(QLineEdit):
     def __init__(self,parent:QWidget|None=None):
         super().__init__(parent)
         self.setReadOnly(True)
+
+class IntDisplay(QSpinBox):
+    def __init__(self,parent:QWidget|None=None):
+        super().__init__(parent)
+        self.setReadOnly(True)
+
+class BoolDisplay(QCheckBox):
+    def __init__(self,parent:QWidget|None=None):
+        super().__init__(parent)
+        self.setEnabled(False)
+        self.toggled.connect(self.update_state)
+
+    def update_state(self):
+        self.setText('是' if self.isChecked() else '否')
 
 class ControllableWizardPage(QWizardPage):
     def __init__(self,parent:QWidget|None=None):
