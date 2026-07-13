@@ -2,9 +2,11 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
+from berserk.types.common import VariantKey
 import datetime
 import chess
 import chess.svg
+import chess.variant
 import os
 
 from tools import SettingsWindow
@@ -18,7 +20,6 @@ class BoardMain(QMainWindow):
         super().__init__()
         self.client = client
         self.mdi_sub_window_list = []
-        self.client.board.make_move()
 
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setMovable(True)
@@ -199,8 +200,15 @@ class GameWindow(QMainWindow):
     def __init__(self,client:Client,game_id:str):
         super().__init__()
         self.status_bar = self.statusBar()
+        self.info_label = QLabel(self.status_bar)
+        self.status_bar.addWidget(self.info_label)
         self.splitter = QSplitter(Qt.Orientation.Horizontal,self)
         self.setCentralWidget(self.splitter)
+
+        self.resize(
+            1490,
+            630,
+        )
 
         self.client = client
         self.game_id = game_id
@@ -405,14 +413,24 @@ class GameWindow(QMainWindow):
                 )
 
     def regret_making_the_move(self):
-        if self.ask_quastion('是否确认悔棋（需要对手同意）'):
-            try:self.client.board.offer_takeback(self.game_id) 
-            except Exception as error:
-                show_error_dialog(
-                    *get_error_details(error),
-                    '悔棋时发生错误',
-                    self,
-                )
+        if self.abortable:
+            if self.ask_quastion('对局暂未走满一步，是否终止对局'):
+                try:self.client.board.abort_game(self.game_id) 
+                except Exception as error:
+                    show_error_dialog(
+                        *get_error_details(error),
+                        '终止对局时发生错误',
+                        self,
+                    )
+        else:
+            if self.ask_quastion('是否确认悔棋（需要对手同意）'):
+                try:self.client.board.offer_takeback(self.game_id) 
+                except Exception as error:
+                    show_error_dialog(
+                        *get_error_details(error),
+                        '悔棋时发生错误',
+                        self,
+                    )
 
     def draw(self):
         if self.ask_quastion('是否确认和棋（需要对手同意）'):
@@ -460,8 +478,47 @@ class GameWindow(QMainWindow):
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.start()
 
-    def generate_svg_from_uci(self,uci_moves:str, orientation:chess.Color=chess.WHITE):
-        board = chess.Board()
+    def generate_svg_from_uci(self,uci_moves: str, orientation: chess.Color, variant: VariantKey, start_fen: str = chess.STARTING_FEN):
+        """
+        生成包含走法的SVG棋盘
+        
+        Args:
+            uci_moves: UCI格式的走法字符串
+            orientation: 棋盘朝向
+            variant: 变体类型，支持 standard, chess960, kingOfTheHill, threeCheck, 
+                    antichess, atomic, horde, racingKings, crazyhouse, fromPosition
+            start_fen: 起始FEN字符串，仅在variant为"fromPosition"或"chess960"时使用
+        """
+        # 验证variant参数
+        valid_variants = [
+            "standard", "chess960", "kingOfTheHill", "threeCheck", 
+            "antichess", "atomic", "horde", "racingKings", 
+            "crazyhouse", "fromPosition"
+        ]
+        if variant not in valid_variants:
+            raise ValueError(f"不支持的变体类型: {variant}，支持的变体: {valid_variants}")
+        
+        # 根据变体类型创建对应的棋盘
+        if variant == "standard" or variant == "fromPosition":
+            # standard和fromPosition使用标准国际象棋
+            board = chess.Board(start_fen if variant == "fromPosition" else chess.STARTING_FEN)
+        elif variant == "chess960":
+            board = chess.Board(start_fen, chess960=True)
+        elif variant == "kingOfTheHill":
+            board = chess.variant.KingOfTheHillBoard(chess.STARTING_FEN)
+        elif variant == "threeCheck":
+            board = chess.variant.ThreeCheckBoard(chess.STARTING_FEN)
+        elif variant == "antichess":
+            board = chess.variant.AntichessBoard(chess.STARTING_FEN)
+        elif variant == "atomic":
+            board = chess.variant.AtomicBoard(chess.STARTING_FEN)
+        elif variant == "horde":
+            board = chess.variant.HordeBoard(chess.STARTING_FEN)
+        elif variant == "racingKings":
+            board = chess.variant.RacingKingsBoard(chess.STARTING_FEN)
+        elif variant == "crazyhouse":
+            board = chess.variant.CrazyhouseBoard(chess.STARTING_FEN)
+        
         move_list = uci_moves.strip().split()
         last_move = None
         all_moves = []  # 用于存储所有走法
@@ -478,11 +535,24 @@ class GameWindow(QMainWindow):
             except ValueError:
                 print(f"警告: 无效的UCI格式 '{uci}'，跳过")
         
+        # 检测当前局面是否存在将军
+        is_check = board.is_check()
+        
+        # 获取被将军的国王位置（如果有将军的话）
+        check_square = None
+        if is_check:
+            # 获取当前轮到走棋的一方的国王位置
+            king_color = board.turn
+            king_square = board.king(king_color)
+            if king_square is not None:
+                check_square = king_square
+        
         # 生成SVG
         svg = chess.svg.board(
             board=board,
             lastmove=last_move,
             orientation=orientation,
+            check=check_square,  # 标注被将军的国王位置
         )
         
         return svg
@@ -493,13 +563,35 @@ class GameWindow(QMainWindow):
             if value['status'] == 'started':
                 #对局进行中
                 moves_str:str = value['moves']
-                self.chess_board.load(self.generate_svg_from_uci(moves_str,self.color).encode())
                 moves_list = moves_str.split(' ')
+
+                if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
+                    self.chess_board.load(self.generate_svg_from_uci(
+                        moves_str,
+                        self.color,
+                        self.variant_key_text,
+                        self.start_fen_text
+                    ).encode())
+                else:self.chess_board.load(self.generate_svg_from_uci(
+                    moves_str,
+                    self.color,
+                    self.variant_key_text,
+                ).encode())
+                    
+                if self.variant_key_text == 'crazyhouse':
+                    board = chess.variant.CrazyhouseBoard()
+                    for move_uci in moves_list:
+                        board.push(chess.Move.from_uci(move_uci))
+                    self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
+                
+                #直接把条件写进去，免得再写多一个if
+                #如果对局还没走满一步，那就不能悔棋，只能终止对局
+                self.abortable = (len(moves_list) == 1)
 
                 if self.color == chess.WHITE:
                     #已走的棋是偶数那么就轮到白方走（0也是偶数）
                     #直接把条件写进去，免得再写多一个if
-                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 0)
+                    self.confirm_move_button.setEnabled((len(moves_list) % 2 == 0) or (moves_str == ''))#特殊情况：棋局刚开始
 
                     if ('btakeback' in value) and (value['btakeback'] == True):
                         self.status_bar.showMessage(
@@ -583,16 +675,67 @@ class GameWindow(QMainWindow):
             self.white_player.set_value(value['white'])
             self.black_player.set_value(value['black'])
 
+            self.variant_key_text = value['variant']['key']
+            self.start_fen_text = value['initialFen']
+
+            if self.variant_key_text == 'chess960':
+                board = chess.Board(self.start_fen_text)
+                start_pos = board.chess960_pos(ignore_counters=False)
+                if start_pos == None:
+                    self.status_bar.showMessage(
+                        '暂未找到chess960编号',
+                        5000,
+                    )
+                else:self.info_label.setText(f'这局使用的chess960起始局面编号是{start_pos}')
+
+            #这些是官网里面出现的机制
+            if self.color == chess.WHITE:
+                if ('title' in value['black']) and (value['black']['title'] == 'BOT'):
+                    #bot账号不给悔棋
+                    self.regret_making_the_move_button.setEnabled(False)
+                elif 'aiLevel' in value['black']:
+                    #人机对弈不给提出和棋
+                    self.draw_button.setEnabled(False)
+            if self.color == chess.BLACK:
+                if ('title' in value['white']) and (value['white']['title'] == 'BOT'):
+                    #bot账号不给悔棋
+                    self.regret_making_the_move_button.setEnabled(False)
+                elif 'aiLevel' in value['white']:
+                    #人机对弈不给提出和棋
+                    self.draw_button.setEnabled(False)
+
             if value['state']['status'] == 'started':
                 #对局进行中
                 moves_str:str = value['state']['moves']
-                self.chess_board.load(self.generate_svg_from_uci(moves_str,self.color).encode())
                 moves_list = moves_str.split(' ')
+
+                if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
+                    self.chess_board.load(self.generate_svg_from_uci(
+                        moves_str,
+                        self.color,
+                        self.variant_key_text,
+                        self.start_fen_text
+                    ).encode())
+                else:self.chess_board.load(self.generate_svg_from_uci(
+                    moves_str,
+                    self.color,
+                    self.variant_key_text,
+                ).encode())
+                    
+                if self.variant_key_text == 'crazyhouse':
+                    board = chess.variant.CrazyhouseBoard()
+                    for move_uci in moves_list:
+                        board.push(chess.Move.from_uci(move_uci))
+                    self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
+
+                #直接把条件写进去，免得再写多一个if
+                #如果对局还没走满一步，那就不能悔棋，只能终止对局
+                self.abortable = (len(moves_list) == 1)
 
                 if self.color == chess.WHITE:
                     #已走的棋是偶数那么就轮到白方走（0也是偶数）
                     #直接把条件写进去，免得再写多一个if
-                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 0)
+                    self.confirm_move_button.setEnabled((len(moves_list) % 2 == 0) or (moves_str == ''))#特殊情况：棋局刚开始
 
                     if ('btakeback' in value['state']) and (value['state']['btakeback'] == True):
                         self.status_bar.showMessage(
