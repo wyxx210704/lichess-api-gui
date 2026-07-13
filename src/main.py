@@ -207,9 +207,9 @@ decline.triggered.connect(lambda:run_function(progress_bar,lambda:client.challen
 ]))))
 challenges_menu.addAction(decline)
 
-export = QAction('导出单个对局（json）')
-export.setShortcut('Ctrl+Shift+G, E, J')
-export.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(
+export_json = QAction('导出单个对局（json）')
+export_json.setShortcut('Ctrl+Shift+G, E, J')
+export_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(
     get_id(window,False,'输入要导出的对局编号'),
     False,
     get_bool(window,'是否添加棋谱'),
@@ -219,11 +219,11 @@ export.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(c
     get_bool(window,'是否添加开局'),
     get_bool(window,'是否添加注释'),
 ))))
-game_menu.addAction(export)
+game_menu.addAction(export_json)
 
-export = QAction('导出单个对局（pgn）')
-export.setShortcut('Ctrl+Shift+G, E, P')
-export.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(
+export_pgn = QAction('导出单个对局（pgn）')
+export_pgn.setShortcut('Ctrl+Shift+G, E, P')
+export_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_string(client.games.export(
     get_id(window,False,'输入要导出的对局编号'),
     True,
     get_bool(window,'是否添加棋谱'),
@@ -233,7 +233,7 @@ export.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(c
     get_bool(window,'是否添加开局'),
     get_bool(window,'是否添加注释'),
 ))))
-game_menu.addAction(export)
+game_menu.addAction(export_pgn)
 
 export_by_player_json = QAction('批量导出用户对局（json）')
 export_by_player_json.setShortcut('Ctrl+Shift+G, P, J')

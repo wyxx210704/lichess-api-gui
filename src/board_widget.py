@@ -21,7 +21,7 @@ class TimedeltaDisplayWidget(QWidget):
     def set_time(self,time:timedelta):
         total = time.total_seconds()
         self.minute.setValue(int(total // 60))
-        self.second.setValue(time % 60)
+        self.second.setValue(total % 60)
 
 class PlayererInfo(QGroupBox):
     def __init__(self, white:bool,parent:QWidget|None=None):
@@ -41,6 +41,8 @@ class PlayererInfo(QGroupBox):
         self.layout_.addRow('是否为不确定等级分',self.is_provisional)
 
     def set_value(self,value:dict):
+        # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
+
         if value:#用来判断字典是否是空的
             if 'aiLevel' in value:
                 self.id.setText('无')

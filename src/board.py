@@ -3,10 +3,15 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
 import datetime
+import chess
+import chess.svg
+import os
 
 from tools import SettingsWindow
 from tools_for_play_chess import ChallengeWindow
 from board_widget import *
+from board_thread_worker import PlayChessStream
+from business_logic import *
 
 class BoardMain(QMainWindow):
     def __init__(self,client:Client):
@@ -14,6 +19,7 @@ class BoardMain(QMainWindow):
         self.client = client
         self.mdi_sub_window_list = []
         self.client.board.make_move()
+
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setMovable(True)
         self.setCentralWidget(self.tab_widget)
@@ -190,20 +196,31 @@ class BoardMain(QMainWindow):
         self.horizontal_layout_in_game_page.addWidget(self.defeat_button)
 
 class GameWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self,client:Client,game_id:str):
         super().__init__()
         self.status_bar = self.statusBar()
         self.splitter = QSplitter(Qt.Orientation.Horizontal,self)
         self.setCentralWidget(self.splitter)
 
+        self.client = client
+        self.game_id = game_id
         self.setWindowTitle('下棋窗口（当前暂为内测状态，暂未投入使用）')
         self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
 
+        for game in self.client.games.get_ongoing():
+            if game['gameId'] == self.game_id:#判断是不是这一局
+                if game['color'] == 'white':
+                    self.color = chess.WHITE
+                elif game['color'] == 'black':
+                    self.color = chess.BLACK
+
+                break#防止多余的循环出现
+
         self.chess_board = NoStretchingSvgWidget(self.splitter)
         self.splitter.addWidget(self.chess_board)
-
         self.create_info_widget()
         self.create_chat_and_record_widget()
+        self.start_thread()
 
     def create_info_widget(self):
         self.info_widget = QSplitter(Qt.Orientation.Vertical,self.splitter)
@@ -256,7 +273,7 @@ class GameWindow(QMainWindow):
         self.basic_time = TimedeltaDisplayWidget(self.time_display)
         self.increment = IntDisplay(self.time_display)
         self.layout_in_time_display.addRow('基本时间',self.basic_time)
-        self.layout_in_time_display.addRow('每步增加时间',self.increment)
+        self.layout_in_time_display.addRow('每步增加时间（秒）',self.increment)
 
     def create_variant(self):
         self.variant = QGroupBox('变体',self.scroll_area_widget)
@@ -297,24 +314,26 @@ class GameWindow(QMainWindow):
         self.vertical_layout_in_game_operation.addLayout(self.horizontal_layout_in_game_operation_1)
         self.vertical_layout_in_game_operation.addLayout(self.horizontal_layout_in_game_operation_2)
 
+        self.confirm_move_button = QPushButton('确认走棋',self.game_operation)
+        self.confirm_move_button.clicked.connect(self.confirm_move)
+        
         self.move_input = QLineEdit(self.game_operation)
         self.move_input.setPlaceholderText('下棋请用UCI格式')
+        self.move_input.returnPressed.connect(self.confirm_move_button.click)
+        
         self.horizontal_layout_in_game_operation_1.addWidget(self.move_input)
-
-        self.confirm_move_button = QPushButton('确认走棋',self.game_operation)
-        #self.confirm_move_button.clicked.connect()
         self.horizontal_layout_in_game_operation_1.addWidget(self.confirm_move_button)
 
         self.regret_making_the_move_button = QPushButton('悔棋',self.game_operation)
-        #self.regret_making_the_move_button.clicked.connect()
+        self.regret_making_the_move_button.clicked.connect(self.regret_making_the_move)
         self.horizontal_layout_in_game_operation_2.addWidget(self.regret_making_the_move_button)
 
         self.draw_button = QPushButton('和棋',self.game_operation)
-        #self.draw_button.clicked.connect()
+        self.draw_button.clicked.connect(self.draw)
         self.horizontal_layout_in_game_operation_2.addWidget(self.draw_button)
 
         self.defeat_button = QPushButton('认输',self.game_operation)
-        #self.defeat_button.clicked.connect()
+        self.defeat_button.clicked.connect(self.defeat)
         self.horizontal_layout_in_game_operation_2.addWidget(self.defeat_button)
 
     def create_chat_and_record_widget(self):
@@ -342,19 +361,320 @@ class GameWindow(QMainWindow):
         self.horizontal_layout_in_chat_and_record_widget = QHBoxLayout()
         self.vertical_layout_in_chat_and_record_widget.addLayout(self.horizontal_layout_in_chat_and_record_widget)
 
-        self.msg_input = QLineEdit(self.chat_and_record_widget)
-        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.msg_input)
-        self.send_to_observation_area = QCheckBox('发送到观战区',self.chat_and_record_widget)
-        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.send_to_observation_area)
-
         self.send_button = QPushButton('发送',self.chat_and_record_widget)
-        #self.send_button.clicked.connect()
+        self.send_button.clicked.connect(self.send_message)
+
+        self.msg_input = QLineEdit(self.chat_and_record_widget)
+        self.msg_input.returnPressed.connect(self.send_button.click)
+        self.send_to_observation_area = QCheckBox('发送到观战区',self.chat_and_record_widget)
+
+        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.msg_input)
+        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.send_to_observation_area)
         self.horizontal_layout_in_chat_and_record_widget.addWidget(self.send_button)
 
     def create_move_record_widget(self):
         self.vertical_layout_in_chat_and_record_widget.addWidget(QLabel('走棋记录'))
         self.move_record_widget = QListWidget(self.chat_and_record_widget)
         self.vertical_layout_in_chat_and_record_widget.addWidget(self.move_record_widget)
+
+    def ask_quastion(self,text:str):
+        button = QMessageBox.question(
+            self,
+            '对局消息',
+            text,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        # 直接把条件返回，不用多写一个if
+        return button == QMessageBox.StandardButton.Yes
+
+    def confirm_move(self):
+        if self.ask_quastion('是否确认走棋'):
+            try:
+                self.client.board.make_move(
+                    self.game_id,
+                    self.move_input.text(),
+                ) 
+
+                self.move_input.clear()
+            except Exception as error:
+                show_error_dialog(
+                    *get_error_details(error),
+                    '走棋时发生错误',
+                    self,
+                )
+
+    def regret_making_the_move(self):
+        if self.ask_quastion('是否确认悔棋（需要对手同意）'):
+            try:self.client.board.offer_takeback(self.game_id) 
+            except Exception as error:
+                show_error_dialog(
+                    *get_error_details(error),
+                    '悔棋时发生错误',
+                    self,
+                )
+
+    def draw(self):
+        if self.ask_quastion('是否确认和棋（需要对手同意）'):
+            try:self.client.board.offer_draw(self.game_id) 
+            except Exception as error:
+                show_error_dialog(
+                    *get_error_details(error),
+                    '和棋时发生错误',
+                    self,
+                )
+
+    def defeat(self):
+        if self.ask_quastion('是否认输'):
+            try:self.client.board.resign_game(self.game_id) 
+            except Exception as error:
+                show_error_dialog(
+                    *get_error_details(error),
+                    '认输时发生错误',
+                    self,
+                )
+
+    def send_message(self):
+        try:
+            self.client.board.post_message(
+                self.game_id,
+                self.msg_input.text(),
+                self.send_to_observation_area.isChecked(),
+            )
+
+            self.msg_input.clear()
+        except Exception as error:
+            show_error_dialog(
+                *get_error_details(error),
+                '发送消息时发生错误',
+                self,
+            )
+
+    def start_thread(self):
+        self.worker_thread = QThread()
+        self.worker = PlayChessStream(self.client,self.game_id)
+        self.worker.moveToThread(self.worker_thread)
+        self.worker.send_dict.connect(self.receive_dict)
+
+        self.worker_thread.started.connect(self.worker.run_event)
+        self.worker_thread.finished.connect(self.worker_thread.deleteLater)
+        self.worker_thread.start()
+
+    def generate_svg_from_uci(self,uci_moves:str, orientation:chess.Color=chess.WHITE):
+        board = chess.Board()
+        move_list = uci_moves.strip().split()
+        last_move = None
+        all_moves = []  # 用于存储所有走法
+        
+        for uci in move_list:
+            try:
+                move = chess.Move.from_uci(uci)
+                if move in board.legal_moves:
+                    board.push(move)
+                    last_move = move
+                    all_moves.append(move)
+                else:
+                    print(f"警告: 非法走法 '{uci}'，跳过")
+            except ValueError:
+                print(f"警告: 无效的UCI格式 '{uci}'，跳过")
+        
+        # 生成SVG
+        svg = chess.svg.board(
+            board=board,
+            lastmove=last_move,
+            orientation=orientation,
+        )
+        
+        return svg
+
+    def receive_dict(self,value:dict):
+        # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
+        if value['type'] == 'gameState':
+            if value['status'] == 'started':
+                #对局进行中
+                moves_str:str = value['moves']
+                self.chess_board.load(self.generate_svg_from_uci(moves_str,self.color).encode())
+                moves_list = moves_str.split(' ')
+
+                if self.color == chess.WHITE:
+                    #已走的棋是偶数那么就轮到白方走（0也是偶数）
+                    #直接把条件写进去，免得再写多一个if
+                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 0)
+
+                    if ('btakeback' in value) and (value['btakeback'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来悔棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                        else:self.client.board.decline_takeback(self.game_id)
+
+                    if ('bdraw' in value) and (value['bdraw'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来和棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                        else:self.client.board.decline_draw(self.game_id)
+                elif self.color == chess.BLACK:
+                    #已走的棋是奇数那么就轮到黑方走，与上面相反
+                    #直接把条件写进去，免得再写多一个if
+                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 1)
+
+                    if ('wtakeback' in value) and (value['wtakeback'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来悔棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                        else:self.client.board.decline_takeback(self.game_id)
+
+                    if ('wdraw' in value) and (value['wdraw'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来和棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                        else:self.client.board.decline_draw(self.game_id)
+
+                self.white_clock.set_time(value['wtime'])
+                self.black_clock.set_time(value['btime'])
+                self.move_record_widget.clear()
+                self.move_record_widget.addItems(moves_list)
+            else:
+                #对局已结束
+                QMessageBox.information(
+                    self,
+                    '对局结束',
+                    f'结束原因：{value["status"]}'
+                )
+
+                if 'winner' in value:
+                    QMessageBox.information(
+                        self,
+                        '对局结束',
+                        f'胜利者：{value['winner']}'
+                    )
+
+                self.draw_button.setEnabled(False)
+                self.defeat_button.setEnabled(False)
+                self.confirm_move_button.setEnabled(False)
+                self.regret_making_the_move_button.setEnabled(False)
+        elif value['type'] == 'gameFull':
+            self.id.setText(value['id'])
+            self.speed.setText(value['speed'])
+            self.is_rated.setChecked(value['rated'])
+            self.perf.setText(value['perf']['name'])
+            self.create_time.setDateTime(value['createdAt'])
+            self.start_fen.setText(value['initialFen'])
+
+            #毫秒要转成秒，所以这两项都会除以1000
+            self.basic_time.set_time(timedelta(seconds=(value['clock']['initial']) / 1000))
+            self.increment.setValue(int(value['clock']['increment'] / 1000))
+
+            self.variant_key.setText(value['variant']['key'])
+            self.variant_name.setText(value['variant']['name'])
+            self.variant_short.setText(value['variant']['short'])
+
+            self.white_player.set_value(value['white'])
+            self.black_player.set_value(value['black'])
+
+            if value['state']['status'] == 'started':
+                #对局进行中
+                moves_str:str = value['state']['moves']
+                self.chess_board.load(self.generate_svg_from_uci(moves_str,self.color).encode())
+                moves_list = moves_str.split(' ')
+
+                if self.color == chess.WHITE:
+                    #已走的棋是偶数那么就轮到白方走（0也是偶数）
+                    #直接把条件写进去，免得再写多一个if
+                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 0)
+
+                    if ('btakeback' in value['state']) and (value['state']['btakeback'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来悔棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                        else:self.client.board.decline_takeback(self.game_id)
+
+                    if ('bdraw' in value['state']) and (value['state']['bdraw'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来和棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                        else:self.client.board.decline_draw(self.game_id)
+                elif self.color == chess.BLACK:
+                    #已走的棋是奇数那么就轮到黑方走，与上面相反
+                    #直接把条件写进去，免得再写多一个if
+                    self.confirm_move_button.setEnabled(len(moves_list) % 2 == 1)
+
+                    if ('wtakeback' in value['state']) and (value['state']['wtakeback'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来悔棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                        else:self.client.board.decline_takeback(self.game_id)
+
+                    if ('wdraw' in value['state']) and (value['state']['wdraw'] == True):
+                        self.status_bar.showMessage(
+                            '对方发来和棋申请',
+                            5000,
+                        )
+
+                        if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                        else:self.client.board.decline_draw(self.game_id)
+
+                self.white_clock.set_time(timedelta(seconds=value['state']['wtime'] / 1000))
+                self.black_clock.set_time(timedelta(seconds=value['state']['btime'] / 1000))
+                self.move_record_widget.clear()
+                self.move_record_widget.addItems(moves_list)
+            else:
+                #对局已结束
+                QMessageBox.information(
+                    self,
+                    '对局结束',
+                    f'结束原因：{value['state']["status"]}'
+                )
+
+                if 'winner' in value['state']:
+                    QMessageBox.information(
+                        self,
+                        '对局结束',
+                        f'胜利者：{value['state']['winner']}'
+                    )
+
+                self.draw_button.setEnabled(False)
+                self.defeat_button.setEnabled(False)
+                self.confirm_move_button.setEnabled(False)
+                self.regret_making_the_move_button.setEnabled(False)
+        elif value['type'] == 'chatLine':
+            item = QTreeWidgetItem(
+                self.chat_tree_widget,
+                [
+                    value['room'],
+                    value['username'],
+                    value['text'],
+                ]
+            )
+        elif (value['type'] == 'opponentGone') and (value['gone'] == True):
+            self.status_bar.showMessage(
+                f'对手已离开对局，{value['claimWinInSeconds']}秒后可以取得胜利',
+                5000,
+            )
+
+            if value['claimWinInSeconds'] == 0:
+                if self.ask_quastion('对方离开对局时间已达上限，是否直接取得胜利'):
+                    self.client.board.claim_victory(self.game_id)
 
     def example(self):
         # 真实对局示例1
@@ -471,8 +791,92 @@ class GameWindow(QMainWindow):
         {'type': 'gameState', 'moves': 'd2d4 e7e5 d4e5 f8a3', 'wtime': datetime.timedelta(seconds=11155, microseconds=300000), 'btime': datetime.timedelta(seconds=10977, microseconds=750000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'started'}
         {'type': 'gameState', 'moves': 'd2d4 e7e5 d4e5 f8a3 d1d7', 'wtime': datetime.timedelta(seconds=11150, microseconds=850000), 'btime': datetime.timedelta(seconds=10977, microseconds=750000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'variantEnd', 'winner': 'white'}
 
+        # 真实对局示例3
+        {
+            'id': 'v53dhSiP', 
+            'variant': {
+                'key': 'standard', 
+                'name': 'Standard', 
+                'short': 'Std'
+            }, 
+            'speed': 'classical', 
+            'perf': {'name': '慢棋'}, 
+            'rated': False, 
+            'createdAt': datetime.datetime(
+                2026, 
+                7, 12, 
+                10, 58, 
+                37, 752000, 
+                tzinfo=datetime.timezone.utc
+            ), 
+            'white': {
+                'id': 'wyxx210704', 
+                'name': 'wyxx210704', 
+                'title': None, 
+                'rating': 1512
+            }, 
+            'black': {}, 
+            'initialFen': 'startpos', 
+            'clock': {
+                'initial': 10800000, 
+                'increment': 180000
+            }, 
+            'type': 'gameFull', 
+            'state': {
+                'type': 'gameState', 
+                'moves': '', 
+                'wtime': 10800000, 
+                'btime': 10800000, 
+                'winc': 180000, 
+                'binc': 180000, 
+                'status': 'started'
+            }
+        }
+
+        {'type': 'gameState', 'moves': 'd2d4', 'wtime': datetime.timedelta(seconds=10800), 'btime': datetime.timedelta(seconds=10800), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'd2d4 d7d5', 'wtime': datetime.timedelta(seconds=10800), 'btime': datetime.timedelta(seconds=10800), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'started'}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 140}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 135}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 130}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 125}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 120}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 115}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 110}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 105}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 100}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 95}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 90}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 85}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 80}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 75}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 70}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 65}
+        {'type': 'gameState', 'moves': 'd2d4 d7d5 b1c3', 'wtime': datetime.timedelta(seconds=10888, microseconds=610000), 'btime': datetime.timedelta(seconds=10800), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'started'}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 60}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 55}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 50}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 45}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 40}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 35}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 30}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 25}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 20}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 15}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 10}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 5}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 0}
+        {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 0}
+        {'type': 'gameState', 'moves': 'd2d4 d7d5 b1c3', 'wtime': datetime.timedelta(seconds=10888, microseconds=610000), 'btime': datetime.timedelta(seconds=10730, microseconds=420000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'timeout', 'winner': 'white'}
+
 if __name__ == '__main__':
     app = QApplication([])
-    window = GameWindow()
+    translator = QTranslator()
+    qt_translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    qm_file_path = os.path.join(qt_translations_path, "qt_zh_CN.qm")
+    
+    if translator.load(qm_file_path):app.installTranslator(translator)
+    client,is_bot = login()
+
+    window = GameWindow(client,input('请输入棋局编号'))
     window.show()
     app.exec()
