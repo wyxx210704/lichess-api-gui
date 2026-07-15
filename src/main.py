@@ -37,7 +37,6 @@ window.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
 account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')
 puzzles_menu = menu_bar.addMenu('谜题')
-challenges_menu = menu_bar.addMenu('挑战')
 game_menu = menu_bar.addMenu('对局')
 more_menu = menu_bar.addMenu('更多')
 
@@ -117,95 +116,6 @@ view_puzzle = QAction('在独立窗口中查看谜题')
 view_puzzle.setShortcut('Ctrl+Shift+P, V')
 view_puzzle.triggered.connect(lambda:start_puzzle_viewer(client,window))
 puzzles_menu.addAction(view_puzzle)
-
-create_challenge = QAction('挑战特定用户')
-create_challenge.setShortcut('Ctrl+Shift+C, U')
-create_challenge.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create(
-    get_user_name(window,'输入被挑战的用户'),
-    get_bool(window,'是否排位'),
-    get_int(window,'输入基础时间（秒）',1,10800),
-    get_int(window,'输入每步增加时间（秒）',1,180),
-    None,
-    get_item(window,'选择自己执棋颜色',["white", "black"]),
-    (get_item(window,'选择变体',[
-        "chess960",
-        "kingOfTheHill",
-        "threeCheck",
-        "antichess",
-        "atomic",
-        "horde",
-        "racingKings",
-        "crazyhouse",
-    ]) if get_bool(
-        window,
-        '是否为变体',
-    ) else None),
-))))
-challenges_menu.addAction(create_challenge)
-
-challenge_ai = QAction('挑战ai')
-challenge_ai.setShortcut('Ctrl+Shift+C, A')
-challenge_ai.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.create_ai(
-    get_int(window,'输入AI等级',1,8),
-    get_int(window,'输入基础时间（秒）',1,10800),
-    get_int(window,'输入每步增加时间（秒）',1,180),
-    None,
-    get_item(window,'选择自己执棋颜色',["white", "black"]),
-    (get_item(window,'选择变体',[
-        "chess960",
-        "kingOfTheHill",
-        "threeCheck",
-        "antichess",
-        "atomic",
-        "horde",
-        "racingKings",
-        "crazyhouse",
-    ]) if get_bool(
-        window,
-        '是否为变体',
-    ) else None),
-))))
-challenges_menu.addAction(challenge_ai)
-
-if not is_bot:
-    open_challenge = QAction('在大厅中创建对局')
-    open_challenge.setShortcut('Ctrl+Shift+C, O')
-    open_challenge.triggered.connect(lambda:create_game(client,window))
-    challenges_menu.addAction(open_challenge)
-
-challenges_menu.addSeparator()
-
-get_mine = QAction('查看我的挑战')
-get_mine.setShortcut('Ctrl+Shift+C, G')
-get_mine.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.get_mine())))
-challenges_menu.addAction(get_mine)
-
-cancel = QAction('取消挑战')
-cancel.setShortcut('Ctrl+Shift+C, C')
-cancel.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.challenges.cancel(get_id(window,False,'输入要取消的挑战编号')))))
-challenges_menu.addAction(cancel)
-
-accept = QAction('接受挑战')
-accept.setShortcut('Ctrl+Shift+C, A')
-accept.triggered.connect(lambda:run_function(progress_bar,lambda:client.challenges.accept(get_id(window,False,'输入要接受的挑战编号'))))
-challenges_menu.addAction(accept)
-
-decline = QAction('拒绝挑战')
-decline.setShortcut('Ctrl+Shift+C, D')
-decline.triggered.connect(lambda:run_function(progress_bar,lambda:client.challenges.decline(get_id(window,False,'输入要拒绝的挑战编号'),get_item(window,'选择要取消的原因',[
-    "generic",
-    "later",
-    "tooFast",
-    "tooSlow",
-    "timeControl",
-    "rated",
-    "casual",
-    "standard",
-    "variant",
-    "noBot",
-    "onlyBot",
-]))))
-challenges_menu.addAction(decline)
 
 export_json = QAction('导出单个对局（json）')
 export_json.setShortcut('Ctrl+Shift+G, E, J')

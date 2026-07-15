@@ -60,7 +60,7 @@ class BoardMain(QMainWindow):
 
     def add_action(self):
         self.challenge_action = QAction('发起挑战')
-        self.challenge_action.triggered.connect(lambda:self.add_sub_window(False,ChallengeWindow()))
+        self.challenge_action.triggered.connect(lambda:self.add_sub_window(False,ChallengeWindow(self.client)))
         self.tool_bar.addAction(self.challenge_action)
 
         self.settings_action = QAction('设置')
@@ -70,7 +70,7 @@ class BoardMain(QMainWindow):
     def add_sub_window(self,is_all:bool=True,window:QWidget|None=None):
         type_summary = [
             SettingsWindow(self.client),
-            ChallengeWindow(),
+            ChallengeWindow(self.client),
         ]
 
         if is_all:
