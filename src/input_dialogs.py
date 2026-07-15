@@ -49,6 +49,8 @@ def get_item(parent:QWidget|None=None,title:str='选择一个选项',items:list[
         title,
         '请选择一个项目',
         items,
+        0,
+        False
     )
 
     if ok and text:return text

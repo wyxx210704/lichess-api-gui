@@ -1,4 +1,19 @@
 from PyQt6.QtWidgets import *
+from widgets import JsonTreeWidget
+
+class InfoDialog(QDialog):
+    def __init__(self, info:dict,parent:QWidget|None=None):
+        super().__init__(parent)
+        self.layout_ = QVBoxLayout(self)
+        self.setWindowTitle('详细信息')
+
+        self.info_widget = JsonTreeWidget(self)
+        self.info_widget.set_dict(info)
+        self.layout_.addWidget(self.info_widget)
+
+        self.button = QPushButton('完成',self)
+        self.button.clicked.connect(self.accept)
+        self.layout_.addWidget(self.button)
 
 class ChallengeWindow(QWidget):
     def __init__(self):

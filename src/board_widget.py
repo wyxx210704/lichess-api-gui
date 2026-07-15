@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from datetime import timedelta
 
+from board_tools import InfoDialog
 from widgets import *
 
 class TimedeltaDisplayWidget(QWidget):
@@ -23,7 +24,7 @@ class TimedeltaDisplayWidget(QWidget):
         self.minute.setValue(int(total // 60))
         self.second.setValue(total % 60)
 
-class PlayererInfo(QGroupBox):
+class PlayerInfo(QGroupBox):
     def __init__(self, white:bool,parent:QWidget|None=None):
         super().__init__(f'{'白' if white else '黑'}方',parent)
         self.layout_ = QFormLayout(self)
@@ -94,3 +95,8 @@ class PlayererInfo(QGroupBox):
 
         {}#未登录
         {'aiLevel': 1}#首页【人机对弈】里面的内置引擎（不是bot账号）
+
+class InfoButton(QPushButton):
+    def __init__(self, info:dict, parent:QWidget|None = None):
+        super().__init__('查看详情', parent)
+        self.clicked.connect(lambda:InfoDialog(info,parent).exec())
