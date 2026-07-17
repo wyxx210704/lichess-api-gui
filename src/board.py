@@ -226,29 +226,45 @@ class BoardMain(QMainWindow):
 
     def receive_challenge(self,challenge_dict:dict[str, list[ChallengeJson]]):
         self.tree_widget_for_challenge.clear()
+        if len(challenge_dict['in']) != 0:
+            self.status_bar.showMessage('当前有挑战待处理，请处理')
+        elif len(self.client.games.get_ongoing()) == 0:
+            self.status_bar.clearMessage()
+
         for challenge in challenge_dict['in']:
-            item = QTreeWidgetItem(self.tree_widget_for_challenge)
+            if challenge['speed'] == 'correspondence':
+                self.client.challenges.decline(
+                    challenge['id'],
+                    'timeControl',
+                )
+            else:
+                item = QTreeWidgetItem(self.tree_widget_for_challenge)
 
-            item.setText(0,challenge['id'])         
-            item.setText(1,challenge['url'])        
-            item.setText(2,challenge['status'])     
-            item.setText(6,'是' if challenge['rated'] else '否')
-            item.setText(7,challenge['speed'])      
-            item.setText(9,challenge['color'])      
-            item.setText(10,challenge['finalColor'])
-            item.setText(12,challenge['direction']) 
+                item.setText(0,challenge['id'])         
+                item.setText(1,challenge['url'])        
+                item.setText(2,challenge['status'])     
+                item.setText(6,'是' if challenge['rated'] else '否')
+                item.setText(7,challenge['speed'])      
+                item.setText(9,challenge['color'])      
+                item.setText(10,challenge['finalColor'])
+                item.setText(12,challenge['direction']) 
 
-            self.tree_widget_for_challenge.setItemWidget(item,3,InfoButton(challenge['challenger'],self.tree_widget_for_challenge))
-            self.tree_widget_for_challenge.setItemWidget(item,4,InfoButton(challenge['destUser'],self.tree_widget_for_challenge))
-            self.tree_widget_for_challenge.setItemWidget(item,5,InfoButton(challenge['variant'],self.tree_widget_for_challenge))
-            self.tree_widget_for_challenge.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.tree_widget_for_challenge))
-            self.tree_widget_for_challenge.setItemWidget(item,11,InfoButton(challenge['perf'],self.tree_widget_for_challenge))
+                self.tree_widget_for_challenge.setItemWidget(item,3,InfoButton(challenge['challenger'],self.tree_widget_for_challenge))
+                self.tree_widget_for_challenge.setItemWidget(item,4,InfoButton(challenge['destUser'],self.tree_widget_for_challenge))
+                self.tree_widget_for_challenge.setItemWidget(item,5,InfoButton(challenge['variant'],self.tree_widget_for_challenge))
+                self.tree_widget_for_challenge.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.tree_widget_for_challenge))
+                self.tree_widget_for_challenge.setItemWidget(item,11,InfoButton(challenge['perf'],self.tree_widget_for_challenge))
 
-            if 'initialFen' in challenge:
-                item.setText(13,challenge['initialFen'])
+                if 'initialFen' in challenge:
+                    item.setText(13,challenge['initialFen'])
 
     def receive_game(self,game_list:list[dict]):
         self.tree_widget_for_game.clear()
+        if len(game_list) != 0:
+            self.status_bar.showMessage('当前有对局待处理，请处理')
+        elif len(self.client.challenges.get_mine()['in']) == 0:
+            self.status_bar.clearMessage()
+
         for game in game_list:
             item = QTreeWidgetItem(self.tree_widget_for_game)
 
@@ -1161,3 +1177,56 @@ class GameWindow(QMainWindow):
         {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 0}
         {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 0}
         {'type': 'gameState', 'moves': 'd2d4 d7d5 b1c3', 'wtime': datetime.timedelta(seconds=10888, microseconds=610000), 'btime': datetime.timedelta(seconds=10730, microseconds=420000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'timeout', 'winner': 'white'}
+        
+        {
+            'id': 'zG7dJP54', 
+            'variant': {
+                'key': 'standard', 
+                'name': 'Standard', 
+                'short': 'Std'
+            }, 
+            'speed': 'correspondence', 
+            'perf': {'name': '通讯棋'}, 
+            'rated': False, 
+            'createdAt': datetime.datetime(
+                2026, 
+                7, 15, 
+                13, 22, 
+                46, 433000, 
+                tzinfo=datetime.timezone.utc
+            ), 
+            'white': {
+                'id': 'wyxx210704', 
+                'name': 'wyxx210704', 
+                'title': None, 
+                'rating': 1500, 
+                'provisional': True
+            }, 
+            'black': {
+                'id': 'wyxx210704_bot', 
+                'name': 'wyxx210704_bot', 
+                'title': 'BOT', 
+                'rating': 3000, 
+                'provisional': True
+            }, 
+            'initialFen': 'startpos', 
+            'daysPerTurn': 14, 
+            'type': 'gameFull', 
+            'state': {
+                'type': 'gameState', 
+                'moves': '', 
+                'wtime': 1209563000, 
+                'btime': 1209600000, 
+                'winc': 0, 
+                'binc': 0, 
+                'status': 'started'
+            }
+        }
+
+        {'type': 'gameState', 'moves': 'e2e4', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5 d1h5', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5 d1h5 b8c6', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5 d1h5 b8c6 f1c4', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5 d1h5 b8c6 f1c4 g8f6', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'started'}
+        {'type': 'gameState', 'moves': 'e2e4 e7e5 d1h5 b8c6 f1c4 g8f6 h5f7', 'wtime': datetime.timedelta(days=14), 'btime': datetime.timedelta(days=14), 'winc': datetime.timedelta(0), 'binc': datetime.timedelta(0), 'status': 'mate', 'winner': 'white'}

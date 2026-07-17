@@ -8,11 +8,17 @@ class TimedeltaDisplayWidget(QWidget):
         super().__init__(parent)
         self.layout_ = QHBoxLayout(self)
 
+        self.day = IntDisplay(self)
+        self.hour = IntDisplay(self)
         self.minute = IntDisplay(self)
         self.second = QDoubleSpinBox(self)
         self.second.setReadOnly(True)
         self.second.setDecimals(6)
 
+        self.layout_.addWidget(self.day)
+        self.layout_.addWidget(QLabel('天'))
+        self.layout_.addWidget(self.hour)
+        self.layout_.addWidget(QLabel('小时'))
         self.layout_.addWidget(self.minute)
         self.layout_.addWidget(QLabel('分钟'))
         self.layout_.addWidget(self.second)
@@ -20,8 +26,43 @@ class TimedeltaDisplayWidget(QWidget):
 
     def set_time(self,time:timedelta):
         total = time.total_seconds()
-        self.minute.setValue(int(total // 60))
-        self.second.setValue(total % 60)
+
+        if total < 60:
+            self.day.setValue(0)
+            self.hour.setValue(0)
+            self.minute.setValue(0)
+            self.second.setValue(total)
+        elif (total >= 60) and (total < 3600):
+            self.day.setValue(0)
+            self.hour.setValue(0)
+            self.minute.setValue(int(total // 60))
+            self.second.setValue(total % 60)
+        elif (total >= 3600) and (total < 86400):
+            self.day.setValue(0)
+            self.hour.setValue(int(total // 3600))
+            self.minute.setValue(int((total % 3600) // 60))
+            self.second.setValue(total % 60)
+        elif total >= 86400:
+            self.day.setValue(int(total // 86400))
+            self.hour.setValue(int((total % 86400) // 3600))
+            self.minute.setValue(int(((total % 86400) % 3600) // 60))
+            self.second.setValue(total % 60)
+
+        if self.day.value() == 0:
+            self.day.hide()
+        else:self.day.show()
+
+        if self.hour.value() == 0:
+            self.hour.hide()
+        else:self.hour.show()
+
+        if self.minute.value() == 0:
+            self.minute.hide()
+        else:self.minute.show()
+
+        if self.second.value() == 0:
+            self.second.hide()
+        else:self.second.show()
 
 class PlayerInfo(QGroupBox):
     def __init__(self, white:bool,parent:QWidget|None=None):
