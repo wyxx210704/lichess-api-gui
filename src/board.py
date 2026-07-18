@@ -716,102 +716,7 @@ class GameWindow(QMainWindow):
     def receive_dict(self,value:dict):
         # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
         if value['type'] == 'gameState':
-            #对局进行中
-            moves_str:str = value['moves']
-            moves_list = moves_str.split(' ')
-
-            if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
-                self.chess_board.load(self.generate_svg_from_uci(
-                    moves_str,
-                    self.color,
-                    self.variant_key_text,
-                    self.start_fen_text
-                ).encode())
-            else:self.chess_board.load(self.generate_svg_from_uci(
-                moves_str,
-                self.color,
-                self.variant_key_text,
-            ).encode())
-                
-            if (self.variant_key_text == 'crazyhouse') and (moves_str != ''):
-                board = chess.variant.CrazyhouseBoard()
-                for move_uci in moves_list:
-                    board.push(chess.Move.from_uci(move_uci))
-                self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
-            
-            #直接把条件写进去，免得再写多一个if
-            #如果对局还没走满一步，那就不能悔棋，只能终止对局
-            self.abortable = (len(moves_list) == 1)
-
-            if self.color == chess.WHITE:
-                #已走的棋是偶数那么就轮到白方走（0也是偶数）
-                #直接把条件写进去，免得再写多一个if
-                self.confirm_move_button.setEnabled((len(moves_list) % 2 == 0) or (moves_str == ''))#特殊情况：棋局刚开始
-
-                if ('btakeback' in value) and (value['btakeback'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来悔棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
-                    else:self.client.board.decline_takeback(self.game_id)
-
-                if ('bdraw' in value) and (value['bdraw'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来和棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
-                    else:self.client.board.decline_draw(self.game_id)
-            elif self.color == chess.BLACK:
-                #已走的棋是奇数那么就轮到黑方走，与上面相反
-                #直接把条件写进去，免得再写多一个if
-                self.confirm_move_button.setEnabled(len(moves_list) % 2 == 1)
-
-                if ('wtakeback' in value) and (value['wtakeback'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来悔棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
-                    else:self.client.board.decline_takeback(self.game_id)
-
-                if ('wdraw' in value) and (value['wdraw'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来和棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
-                    else:self.client.board.decline_draw(self.game_id)
-
-            self.white_clock.set_time(value['wtime'])
-            self.black_clock.set_time(value['btime'])
-            self.move_record_widget.clear()
-            self.move_record_widget.addItems(moves_list)
-
-            if value['status'] != 'started':
-                #对局已结束
-                QMessageBox.information(
-                    self,
-                    '对局结束',
-                    f'结束原因：{value["status"]}'
-                )
-
-                if 'winner' in value:
-                    QMessageBox.information(
-                        self,
-                        '对局结束',
-                        f'胜利者：{value['winner']}'
-                    )
-
-                self.draw_button.setEnabled(False)
-                self.defeat_button.setEnabled(False)
-                self.confirm_move_button.setEnabled(False)
-                self.regret_making_the_move_button.setEnabled(False)
+            self.change_state(value)
         elif value['type'] == 'gameFull':
             self.id.setText(value['id'])
             self.speed.setText(value['speed'])
@@ -864,102 +769,7 @@ class GameWindow(QMainWindow):
                     #人机对弈不给提出和棋
                     self.draw_button.setEnabled(False)
 
-            #对局进行中
-            moves_str:str = value['state']['moves']
-            moves_list = moves_str.split(' ')
-
-            if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
-                self.chess_board.load(self.generate_svg_from_uci(
-                    moves_str,
-                    self.color,
-                    self.variant_key_text,
-                    self.start_fen_text
-                ).encode())
-            else:self.chess_board.load(self.generate_svg_from_uci(
-                moves_str,
-                self.color,
-                self.variant_key_text,
-            ).encode())
-                
-            if (self.variant_key_text == 'crazyhouse') and (moves_str != ''):
-                board = chess.variant.CrazyhouseBoard()
-                for move_uci in moves_list:
-                    board.push(chess.Move.from_uci(move_uci))
-                self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
-
-            #直接把条件写进去，免得再写多一个if
-            #如果对局还没走满一步，那就不能悔棋，只能终止对局
-            self.abortable = (len(moves_list) == 1)
-
-            if self.color == chess.WHITE:
-                #已走的棋是偶数那么就轮到白方走（0也是偶数）
-                #直接把条件写进去，免得再写多一个if
-                self.confirm_move_button.setEnabled((len(moves_list) % 2 == 0) or (moves_str == ''))#特殊情况：棋局刚开始
-
-                if ('btakeback' in value['state']) and (value['state']['btakeback'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来悔棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
-                    else:self.client.board.decline_takeback(self.game_id)
-
-                if ('bdraw' in value['state']) and (value['state']['bdraw'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来和棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
-                    else:self.client.board.decline_draw(self.game_id)
-            elif self.color == chess.BLACK:
-                #已走的棋是奇数那么就轮到黑方走，与上面相反
-                #直接把条件写进去，免得再写多一个if
-                self.confirm_move_button.setEnabled(len(moves_list) % 2 == 1)
-
-                if ('wtakeback' in value['state']) and (value['state']['wtakeback'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来悔棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
-                    else:self.client.board.decline_takeback(self.game_id)
-
-                if ('wdraw' in value['state']) and (value['state']['wdraw'] == True):
-                    self.status_bar.showMessage(
-                        '对方发来和棋申请',
-                        5000,
-                    )
-
-                    if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
-                    else:self.client.board.decline_draw(self.game_id)
-
-            self.white_clock.set_time(timedelta(seconds=value['state']['wtime'] / 1000))
-            self.black_clock.set_time(timedelta(seconds=value['state']['btime'] / 1000))
-            self.move_record_widget.clear()
-            self.move_record_widget.addItems(moves_list)
-
-            if value['state']['status'] != 'started':
-                #对局已结束
-                QMessageBox.information(
-                    self,
-                    '对局结束',
-                    f'结束原因：{value['state']["status"]}'
-                )
-
-                if 'winner' in value['state']:
-                    QMessageBox.information(
-                        self,
-                        '对局结束',
-                        f'胜利者：{value['state']['winner']}'
-                    )
-
-                self.draw_button.setEnabled(False)
-                self.defeat_button.setEnabled(False)
-                self.confirm_move_button.setEnabled(False)
-                self.regret_making_the_move_button.setEnabled(False)
+            self.change_state(value['state'])
         elif value['type'] == 'chatLine':
             item = QTreeWidgetItem(
                 self.chat_tree_widget,
@@ -978,6 +788,109 @@ class GameWindow(QMainWindow):
             if value['claimWinInSeconds'] == 0:
                 if self.ask_quastion('对方离开对局时间已达上限，是否直接取得胜利'):
                     self.client.board.claim_victory(self.game_id)
+
+    def change_state(self,value:dict):
+        #对局进行中
+        moves_str:str = value['moves']
+        moves_list = moves_str.split(' ')
+
+        if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
+            self.chess_board.load(self.generate_svg_from_uci(
+                moves_str,
+                self.color,
+                self.variant_key_text,
+                self.start_fen_text
+            ).encode())
+        else:self.chess_board.load(self.generate_svg_from_uci(
+            moves_str,
+            self.color,
+            self.variant_key_text,
+        ).encode())
+            
+        if (self.variant_key_text == 'crazyhouse') and (moves_str != ''):
+            board = chess.variant.CrazyhouseBoard()
+            for move_uci in moves_list:
+                board.push(chess.Move.from_uci(move_uci))
+            self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
+        
+        #直接把条件写进去，免得再写多一个if
+        #如果对局还没走满一步，那就不能悔棋，只能终止对局
+        self.abortable = (len(moves_list) == 1)
+
+        if self.color == chess.WHITE:
+            #已走的棋是偶数那么就轮到白方走（0也是偶数）
+            #直接把条件写进去，免得再写多一个if
+            self.confirm_move_button.setEnabled((len(moves_list) % 2 == 0) or (moves_str == ''))#特殊情况：棋局刚开始
+
+            if ('btakeback' in value) and (value['btakeback'] == True):
+                self.status_bar.showMessage(
+                    '对方发来悔棋申请',
+                    5000,
+                )
+
+                if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                else:self.client.board.decline_takeback(self.game_id)
+
+            if ('bdraw' in value) and (value['bdraw'] == True):
+                self.status_bar.showMessage(
+                    '对方发来和棋申请',
+                    5000,
+                )
+
+                if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                else:self.client.board.decline_draw(self.game_id)
+        elif self.color == chess.BLACK:
+            #已走的棋是奇数那么就轮到黑方走，与上面相反
+            #直接把条件写进去，免得再写多一个if
+            self.confirm_move_button.setEnabled(len(moves_list) % 2 == 1)
+
+            if ('wtakeback' in value) and (value['wtakeback'] == True):
+                self.status_bar.showMessage(
+                    '对方发来悔棋申请',
+                    5000,
+                )
+
+                if self.ask_quastion('对方发来悔棋申请，是否接受'):self.client.board.accept_takeback(self.game_id)
+                else:self.client.board.decline_takeback(self.game_id)
+
+            if ('wdraw' in value) and (value['wdraw'] == True):
+                self.status_bar.showMessage(
+                    '对方发来和棋申请',
+                    5000,
+                )
+
+                if self.ask_quastion('对方发来和棋申请，是否接受'):self.client.board.accept_draw(self.game_id)
+                else:self.client.board.decline_draw(self.game_id)
+
+        if (type(value['wtime']) == timedelta) and (type(value['btime']) == timedelta):
+            self.white_clock.set_time(value['wtime'])
+            self.black_clock.set_time(value['btime'])
+        else:
+            self.white_clock.set_time(timedelta(seconds=value['wtime'] / 1000))
+            self.black_clock.set_time(timedelta(seconds=value['btime'] / 1000))
+        
+        self.move_record_widget.clear()
+        self.move_record_widget.addItems(moves_list)
+
+        if value['status'] != 'started':
+            #对局已结束
+            QMessageBox.information(
+                self,
+                '对局结束',
+                f'结束原因：{value["status"]}'
+            )
+
+            if 'winner' in value:
+                QMessageBox.information(
+                    self,
+                    '对局结束',
+                    f'胜利者：{value['winner']}'
+                )
+
+            self.draw_button.setEnabled(False)
+            self.defeat_button.setEnabled(False)
+            self.confirm_move_button.setEnabled(False)
+            self.regret_making_the_move_button.setEnabled(False)
 
     def example(self):
         # 真实对局示例1：悔棋、和棋、聊天消息、匿名账号

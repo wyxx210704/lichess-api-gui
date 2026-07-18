@@ -162,6 +162,7 @@ class BoolDisplay(QCheckBox):
         super().__init__(parent)
         self.setEnabled(False)
         self.toggled.connect(self.update_state)
+        self.setText('否')
 
     def update_state(self):
         self.setText('是' if self.isChecked() else '否')
