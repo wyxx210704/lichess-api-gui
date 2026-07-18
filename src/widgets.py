@@ -9,7 +9,7 @@ class JsonTreeWidget(QTreeWidget):
         super().__init__(parent)
         self.setColumnCount(2)
         self.setHeaderLabels(["索引", "数据"])
-        self.setIndentation(20)
+        #self.setStyleSheet('font-family:lichess;font-size: 15px;')
         # 清空内容
         
     def clear_data(self):

@@ -55,29 +55,22 @@ class BoardMain(QMainWindow):
         self.page_challenge()
         self.page_game()
         self.add_action()
-        self.add_sub_window()
         self.start_thread()
+
+        challenge_out = self.mdi_area.addSubWindow(ChallengeWindow(self.client))
+        challenge_out.showMaximized()
 
     def add_action(self):
         self.challenge_action = QAction('发起挑战')
-        self.challenge_action.triggered.connect(lambda:self.add_sub_window(False,ChallengeWindow(self.client)))
+        self.challenge_action.triggered.connect(lambda:self.add_sub_window(ChallengeWindow(self.client)))
         self.tool_bar.addAction(self.challenge_action)
 
         self.settings_action = QAction('设置')
-        self.settings_action.triggered.connect(lambda:self.add_sub_window(False,SettingsWindow(self.client)))
+        self.settings_action.triggered.connect(lambda:self.add_sub_window(SettingsWindow(self.client)))
         self.tool_bar.addAction(self.settings_action)
 
-    def add_sub_window(self,is_all:bool=True,window:QWidget|None=None):
-        type_summary = [
-            SettingsWindow(self.client),
-            ChallengeWindow(self.client),
-        ]
-
-        if is_all:
-            for type_class in type_summary:
-                self.mdi_area.addSubWindow(type_class)
-        else:
-            self.mdi_area.addSubWindow(window).show()
+    def add_sub_window(self,window:QWidget|None=None):
+        self.mdi_area.addSubWindow(window).show()
         
     def page_challenge(self):
         self.challenge_page = QWidget(self.splitter)
@@ -232,31 +225,25 @@ class BoardMain(QMainWindow):
             self.status_bar.clearMessage()
 
         for challenge in challenge_dict['in']:
-            if challenge['speed'] == 'correspondence':
-                self.client.challenges.decline(
-                    challenge['id'],
-                    'timeControl',
-                )
-            else:
-                item = QTreeWidgetItem(self.tree_widget_for_challenge)
+            item = QTreeWidgetItem(self.tree_widget_for_challenge)
 
-                item.setText(0,challenge['id'])         
-                item.setText(1,challenge['url'])        
-                item.setText(2,challenge['status'])     
-                item.setText(6,'是' if challenge['rated'] else '否')
-                item.setText(7,challenge['speed'])      
-                item.setText(9,challenge['color'])      
-                item.setText(10,challenge['finalColor'])
-                item.setText(12,challenge['direction']) 
+            item.setText(0,challenge['id'])         
+            item.setText(1,challenge['url'])        
+            item.setText(2,challenge['status'])     
+            item.setText(6,'是' if challenge['rated'] else '否')
+            item.setText(7,challenge['speed'])      
+            item.setText(9,challenge['color'])      
+            item.setText(10,challenge['finalColor'])
+            item.setText(12,challenge['direction']) 
 
-                self.tree_widget_for_challenge.setItemWidget(item,3,InfoButton(challenge['challenger'],self.tree_widget_for_challenge))
-                self.tree_widget_for_challenge.setItemWidget(item,4,InfoButton(challenge['destUser'],self.tree_widget_for_challenge))
-                self.tree_widget_for_challenge.setItemWidget(item,5,InfoButton(challenge['variant'],self.tree_widget_for_challenge))
-                self.tree_widget_for_challenge.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.tree_widget_for_challenge))
-                self.tree_widget_for_challenge.setItemWidget(item,11,InfoButton(challenge['perf'],self.tree_widget_for_challenge))
+            self.tree_widget_for_challenge.setItemWidget(item,3,InfoButton(challenge['challenger'],self.tree_widget_for_challenge))
+            self.tree_widget_for_challenge.setItemWidget(item,4,InfoButton(challenge['destUser'],self.tree_widget_for_challenge))
+            self.tree_widget_for_challenge.setItemWidget(item,5,InfoButton(challenge['variant'],self.tree_widget_for_challenge))
+            self.tree_widget_for_challenge.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.tree_widget_for_challenge))
+            self.tree_widget_for_challenge.setItemWidget(item,11,InfoButton(challenge['perf'],self.tree_widget_for_challenge))
 
-                if 'initialFen' in challenge:
-                    item.setText(13,challenge['initialFen'])
+            if 'initialFen' in challenge:
+                item.setText(13,challenge['initialFen'])
 
     def receive_game(self,game_list:list[dict]):
         self.tree_widget_for_game.clear()
@@ -287,6 +274,7 @@ class BoardMain(QMainWindow):
             self.tree_widget_for_game.setItemWidget(item,12,InfoButton(game['opponent'],self.tree_widget_for_game))
 
     def example(self):
+        #有进来的挑战
         {'in': [{
             'id': 'RV3g4qOa', 
             'url': 'https://lichess.org/RV3g4qOa', 
@@ -832,9 +820,13 @@ class GameWindow(QMainWindow):
             self.create_time.setDateTime(value['createdAt'])
             self.start_fen.setText(value['initialFen'])
 
-            #毫秒要转成秒，所以这两项都会除以1000
-            self.basic_time.set_time(timedelta(seconds=(value['clock']['initial']) / 1000))
-            self.increment.setValue(int(value['clock']['increment'] / 1000))
+            if value['speed'] == 'correspondence':
+                self.basic_time.set_time(timedelta(days=value['daysPerTurn']))
+                self.increment.setValue(0)#通讯棋没有加时这种说法
+            else:
+                #毫秒要转成秒，所以这两项都会除以1000
+                self.basic_time.set_time(timedelta(seconds=(value['clock']['initial']) / 1000))
+                self.increment.setValue(int(value['clock']['increment'] / 1000))
 
             self.variant_key.setText(value['variant']['key'])
             self.variant_name.setText(value['variant']['name'])
@@ -948,6 +940,7 @@ class GameWindow(QMainWindow):
             self.black_clock.set_time(timedelta(seconds=value['state']['btime'] / 1000))
             self.move_record_widget.clear()
             self.move_record_widget.addItems(moves_list)
+
             if value['state']['status'] != 'started':
                 #对局已结束
                 QMessageBox.information(
@@ -987,7 +980,7 @@ class GameWindow(QMainWindow):
                     self.client.board.claim_victory(self.game_id)
 
     def example(self):
-        # 真实对局示例1
+        # 真实对局示例1：悔棋、和棋、聊天消息、匿名账号
         {
             'id': 'f0cEIixZ', 
             'variant': {
@@ -1049,7 +1042,7 @@ class GameWindow(QMainWindow):
         {'type': 'chatLine', 'room': 'player', 'username': 'lichess', 'text': 'White offers draw'}
         {'type': 'chatLine', 'room': 'player', 'username': 'lichess', 'text': 'Draw offer accepted'}
 
-        # 真实对局示例2
+        # 真实对局示例2：人机对弈、变体
         {
             'id': 'Y7Niaxm9', 
             'variant': {
@@ -1101,7 +1094,7 @@ class GameWindow(QMainWindow):
         {'type': 'gameState', 'moves': 'd2d4 e7e5 d4e5 f8a3', 'wtime': datetime.timedelta(seconds=11155, microseconds=300000), 'btime': datetime.timedelta(seconds=10977, microseconds=750000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'started'}
         {'type': 'gameState', 'moves': 'd2d4 e7e5 d4e5 f8a3 d1d7', 'wtime': datetime.timedelta(seconds=11150, microseconds=850000), 'btime': datetime.timedelta(seconds=10977, microseconds=750000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'variantEnd', 'winner': 'white'}
 
-        # 真实对局示例3
+        # 真实对局示例3：对手离开
         {
             'id': 'v53dhSiP', 
             'variant': {
@@ -1178,6 +1171,7 @@ class GameWindow(QMainWindow):
         {'type': 'opponentGone', 'gone': True, 'claimWinInSeconds': 0}
         {'type': 'gameState', 'moves': 'd2d4 d7d5 b1c3', 'wtime': datetime.timedelta(seconds=10888, microseconds=610000), 'btime': datetime.timedelta(seconds=10730, microseconds=420000), 'winc': datetime.timedelta(seconds=180), 'binc': datetime.timedelta(seconds=180), 'status': 'timeout', 'winner': 'white'}
         
+        #真实对局示例4：bot账号、通讯棋
         {
             'id': 'zG7dJP54', 
             'variant': {
