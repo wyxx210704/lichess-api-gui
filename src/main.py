@@ -20,7 +20,7 @@ window.setMinimumWidth(400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本2.0'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本2.6'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -33,6 +33,7 @@ window.setCentralWidget(tree)
 
 window.setWindowTitle('lichess api')
 window.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+window.raise_
 
 account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')
@@ -67,7 +68,7 @@ users_menu.addAction(get_all_top_10)
 
 get_crosstable = QAction('两个用户之间的对战数据')
 get_crosstable.setShortcut('Ctrl+Shift+U, C')
-get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(get_user_name(window,'输入第一个用户'),get_user_name(window,'输入第二个用户')))))
+get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(get_user_name(window,'输入第一个用户'),get_user_name(window,'输入第二个用户'),get_bool(window,'是否获取当前比赛数据')))))
 users_menu.addAction(get_crosstable)
 
 get_leaderboard = QAction('某个特定种类的排行榜')

@@ -108,6 +108,13 @@
             padding: 0 0 0 1em;     /* 内部左边距，让文字不紧贴竖线 */
             border-left: 4px solid #ddd; /* 经典的灰色左侧竖线 */
         }
+
+        .new-label {color: #00ff00;}            /*新增*/
+        .optimization-label {color: #0000ff;}   /*优化*/
+        .revise-label {color: #ffff00;}         /*修改*/
+        .bug-fixing-label {color: #00ffff;}     /*bug修复*/
+        .notice-label {color: #ff00ff;}         /*提示*/
+        .delete-label {color: #ff0000;}         /*删除*/
     </style>
 </head>
 <body>
@@ -129,7 +136,8 @@
         <blockquote class="md-quote">
             项目成立一个月庆祝版本将要在几天后<b style="color: green;">正式发布</b>
             <br>
-            还剩<b style="color:red">5</b>天
+            还剩<b style="color:red">4</b>天
+            <p class="notice-label">该文档在不定期改样式，当前正在装修</p>
         </blockquote>
 
         <h2>3.0-beta*版本（远期计划）</h2>
@@ -144,41 +152,40 @@
 
         <h1>已更新的版本</h1>
 
-        <h2>2.5版本（当前版本）（更新日期2026.7.18）</h2>
+        <h2>2.6版本（当前版本）（更新日期2026.7.19）</h2>
         <blockquote class="md-quote">
-            优化board.py代码布局，将处理状态单独放到函数
-            <br>
-            优化布尔值显示，默认添加文字“否”
+            <p class="new-label">新增功能：json显示组件支持复制</p>
+        </blockquote>
+
+        <h2>2.5版本（更新日期2026.7.18）</h2>
+        <blockquote class="md-quote">
+            <p class="optimization-label">优化board.py代码布局，将处理状态单独放到函数</p>
+            <p class="optimization-label">优化布尔值显示，默认添加文字“否”</p>
         </blockquote>
 
         <h2>2.4版本（更新日期2026.7.18）</h2>
         <blockquote class="md-quote">
-            优化下棋页面启动，默认展示发出挑战的页面
-            <br>
-            优化通讯棋数据处理，并且重新解放通讯棋功能
+            <p class="optimization-label">优化下棋页面启动，默认展示发出挑战的页面</p>
+            <p class="optimization-label">优化通讯棋数据处理，并且重新解放通讯棋功能</p>
         </blockquote>
 
         <h2>2.3版本（更新日期2026.7.17）</h2>
         <blockquote class="md-quote">
-            优化下棋通知显示，有挑战或者对局的时候会显示到状态栏上
-            <br>
-            优化时间显示，下棋时那些时间凡是单位为零的全都会隐藏，不占用窗口空间
+            <p class="optimization-label">优化下棋通知显示，有挑战或者对局的时候会显示到状态栏上</p>
+            <p class="optimization-label">优化时间显示，下棋时那些时间凡是单位为零的全都会隐藏，不占用窗口空间</p>
         </blockquote>
 
         <h2>2.2版本（更新日期2026.7.16）</h2>
         <blockquote class="md-quote">
-            修复通讯棋无法打开问题
-            <br>
-            遇到通讯棋直接拒绝
-            <br>
-            优化时钟显示
+            <p class="bug-fixing-label">修复通讯棋无法打开问题</p>
+            <p class="notice-label">遇到通讯棋直接拒绝</p>
+            <p class="optimization-label">优化时钟显示</p>
         </blockquote>
 
         <h2>2.1版本（更新日期2026.7.15）</h2>
         <blockquote class="md-quote">
-            主界面取消挑战菜单
-            <br>
-            跟挑战相关功能迁移到人类下棋入口
+            <p class="delete-label">主界面取消挑战菜单</p>
+            <p class="revise-label">跟挑战相关功能迁移到人类下棋入口</p>
         </blockquote>
 
         <h2>2.0版本（更新日期2026.7.15）（大版本更新）</h2>

@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import *
+from PyQt6.QtGui import *
 
 from translates import *
 
@@ -9,16 +10,13 @@ class JsonTreeWidget(QTreeWidget):
         super().__init__(parent)
         self.setColumnCount(2)
         self.setHeaderLabels(["索引", "数据"])
-        #self.setStyleSheet('font-family:lichess;font-size: 15px;')
-        # 清空内容
-        
-    def clear_data(self):
-        """清空所有数据"""
-        self.clear()
+        self.value = None
     
     def set_integer(self, value:int):
         """显示整数"""
-        self.clear_data()
+        self.clear()
+        self.value = value
+
         item = QTreeWidgetItem(self)
         item.setText(0, "返回结果")
         item.setText(1, str(value))
@@ -26,7 +24,9 @@ class JsonTreeWidget(QTreeWidget):
     
     def set_float(self, value:float):
         """显示小数"""
-        self.clear_data()
+        self.clear()
+        self.value = value
+
         item = QTreeWidgetItem(self)
         item.setText(0, "返回结果")
         item.setText(1, str(value))
@@ -34,7 +34,8 @@ class JsonTreeWidget(QTreeWidget):
     
     def set_string(self, value:str):
         """显示字符串"""
-        self.clear_data()
+        self.clear()
+        self.value = value
         if not isinstance(value, str):
             raise TypeError("参数必须是字符串类型")
         
@@ -56,7 +57,9 @@ class JsonTreeWidget(QTreeWidget):
     
     def set_bool(self, value:bool):
         """显示布尔值"""
-        self.clear_data()
+        self.clear()
+        self.value = value
+
         item = QTreeWidgetItem(self)
         item.setText(0, "返回结果")
         item.setText(1, "True" if value else "False")
@@ -64,7 +67,9 @@ class JsonTreeWidget(QTreeWidget):
     
     def set_list(self, value:list):
         """显示列表"""
-        self.clear_data()
+        self.clear()
+        self.value = value
+
         if not isinstance(value, list):
             raise TypeError("参数必须是列表类型")
         self._add_list_items(self, value)
@@ -72,13 +77,15 @@ class JsonTreeWidget(QTreeWidget):
     
     def set_dict(self, value:dict):
         """显示字典"""
-        self.clear_data()
+        self.clear()
+        self.value = value
+
         if not isinstance(value, dict):
             raise TypeError("参数必须是字典类型")
         self._add_dict_items(self, value)
         self.expandAll()
     
-    def _add_list_items(self, parent, data):
+    def _add_list_items(self, parent, data:list):
         """递归添加列表项"""
         for index, item_data in enumerate(data):
             item = QTreeWidgetItem(parent)
@@ -109,7 +116,7 @@ class JsonTreeWidget(QTreeWidget):
             else:
                 item.setText(1, str(item_data))
 
-    def _add_dict_items(self, parent, data):
+    def _add_dict_items(self, parent, data:dict):
         """递归添加字典项"""
         for key, value in data.items():
             item = QTreeWidgetItem(parent)
@@ -137,6 +144,21 @@ class JsonTreeWidget(QTreeWidget):
                 else:item.setText(1,get_value_translate(value))
             else:
                 item.setText(1, str(value))
+
+    def contextMenuEvent(self, event:QContextMenuEvent):
+        item = self.itemAt(event.pos())
+        menu = QMenu()
+
+        if item != None:
+            copy_action = QAction('复制已选中的项')
+            copy_action.triggered.connect(lambda:QApplication.clipboard().setText(item.text(1)))
+            menu.addAction(copy_action)
+
+        copy_all_action = QAction('复制全部内容')
+        copy_all_action.triggered.connect(lambda:QApplication.clipboard().setText(str(self.value)))
+        menu.addAction(copy_all_action)
+
+        menu.exec(event.globalPos())
 
 class NoStretchingSvgWidget(QSvgWidget):
     def __init__(self,parent:QWidget|None=None):
