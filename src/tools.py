@@ -9,6 +9,7 @@ import chess.svg
 from widgets import *
 from settings import *
 from thread_worker import GameViewerWorker
+from costants import ICON,CONFIG
 
 class GameViewer(QWidget):
     def __init__(self,generator:Generator):
@@ -19,7 +20,7 @@ class GameViewer(QWidget):
         self.generator = generator
         
         self.setWindowTitle('对局查看器')
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
 
         # 第二部分：窗口顶层部件
         self.svg_widget = NoStretchingSvgWidget(self)
@@ -224,7 +225,7 @@ class LoginWizard(QWizard):
 
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
         self.setWindowTitle('登录向导')
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
 
         self.token_creation_guidelines()
         self.login_page()
@@ -253,7 +254,7 @@ class LoginWizard(QWizard):
 
     def load_config_with_format(self) -> ConfigFormat:
         return load(open(
-            '../configuration_and_resources/config.json',
+            CONFIG,
             'r',
             encoding='utf-8',
             errors='ignore',
@@ -336,7 +337,7 @@ class ErrorMessageBox(QDialog):
         self.layout_ = QFormLayout(self)
 
         self.setWindowTitle(title)
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
 
         self.file_name = file_name
         self.line_number = str(line_number)
@@ -395,21 +396,12 @@ class SettingsWindow(QMainWindow):
 
         self.setMinimumWidth(335)
         self.setWindowTitle('设置')
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
 
-        self.add_widget(TokenManager(self.widget_in_scroll_area))
-        self.add_widget(AutoLoginControl(self.widget_in_scroll_area))
+        self.layout_.addWidget(TokenManager(self.widget_in_scroll_area))
+        self.layout_.addWidget(AutoLoginControl(self.widget_in_scroll_area))
 
         account_info = client.account.get()
         self.status_bar = self.statusBar()
         self.status_bar.addWidget(QLabel(f'当前登录账号：{account_info["username"]}'))
         self.status_bar.addWidget(QLabel(f'下棋客户端模式：{'bot' if ('title' in account_info) and (account_info["title"] == 'BOT') else '人类'}模式'))
-
-    def add_widget(self,widget:BaseSettingsWidget):
-        self.layout_.addWidget(widget)
-        self.layout_.addWidget(HorizontalLine(self.widget_in_scroll_area))
-
-class ChessPuzzleViewer(QMainWindow):
-    def __init__(self):
-        raise RuntimeError('该组件暂时不稳定，还属于内测阶段，暂时无法使用')
-    # 剩余内测代码暂时不公开展示

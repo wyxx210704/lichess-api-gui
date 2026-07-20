@@ -6,10 +6,11 @@ from json import load
 
 from tools import LoginWizard,ErrorMessageBox
 from config_format import ConfigFormat
+from costants import CONFIG
 
 def load_config_with_format() -> ConfigFormat:
     return load(open(
-        '../configuration_and_resources/config.json',
+        CONFIG,
         'r',
         encoding='utf-8',
         errors='ignore',

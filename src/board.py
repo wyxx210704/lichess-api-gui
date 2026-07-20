@@ -16,6 +16,7 @@ from board_widget import *
 from board_thread_worker import *
 from business_logic import *
 from input_dialogs import get_item
+from costants import ICON
 
 class BoardMain(QMainWindow):
     def __init__(self,client:Client):
@@ -31,7 +32,7 @@ class BoardMain(QMainWindow):
         self.status_bar = self.statusBar()
 
         self.setWindowTitle('人类专用下棋页面')
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
         
         self.mdi_area = QMdiArea(self.tab_widget)
         self.mdi_area.setBackground(QBrush())
@@ -369,7 +370,7 @@ class GameWindow(QMainWindow):
         self.client = client
         self.game_id = game_id
         self.setWindowTitle(f'下棋窗口，对局{self.game_id}')
-        self.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
+        self.setWindowIcon(QIcon(ICON))
 
         for game in self.client.games.get_ongoing():
             if game['gameId'] == self.game_id:#判断是不是这一局

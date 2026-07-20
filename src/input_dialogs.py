@@ -1,23 +1,6 @@
 from PyQt6.QtWidgets import *
 
-PERFS = [
-    #标准
-    "ultraBullet", 
-    "bullet", 
-    "blitz", 
-    "rapid", 
-    "classical", 
-    "correspondence",
-    #变体
-    "chess960",
-    "kingOfTheHill",
-    "threeCheck",
-    "antichess",
-    "atomic",
-    "horde",
-    "racingKings",
-    "crazyhouse",
-]
+from costants import PERFS
 
 def get_user_name(parent:QWidget|None=None,title:str='输入用户'):
     text, ok = QInputDialog.getText(

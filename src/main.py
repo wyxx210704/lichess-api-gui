@@ -6,6 +6,7 @@ import os.path
 from widgets import JsonTreeWidget
 from start_play_chess import turn_from_main
 from events import *
+from costants import ICON
 
 app = QApplication([])
 translator = QTranslator()
@@ -32,8 +33,11 @@ tree = JsonTreeWidget(window)
 window.setCentralWidget(tree)
 
 window.setWindowTitle('lichess api')
-window.setWindowIcon(QIcon('../configuration_and_resources/lichess_icon.ico'))
-window.raise_
+window.setWindowIcon(QIcon(ICON))
+window.resize(
+    750,
+    500,
+)
 
 account_menu = menu_bar.addMenu('账号')
 users_menu = menu_bar.addMenu('查询用户')

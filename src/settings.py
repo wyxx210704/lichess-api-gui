@@ -4,14 +4,15 @@ from json import load,dump
 import os
 
 from config_format import ConfigFormat
+from costants import CONFIG
 
-class BaseSettingsWidget(QWidget):
-    def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
+class BaseSettingsWidget(QGroupBox):
+    def __init__(self, title:str,parent: QWidget | None = None):
+        super().__init__(title,parent)
 
     def load_config_with_format(self) -> ConfigFormat:
         return load(open(
-            '../configuration_and_resources/config.json',
+            CONFIG,
             'r',
             encoding='utf-8',
             errors='ignore',
@@ -21,7 +22,7 @@ class BaseSettingsWidget(QWidget):
         dump(
             config,
             open(
-                '../configuration_and_resources/config.json',
+                CONFIG,
                 'w',
                 encoding='utf-8',
                 errors='ignore',
@@ -32,10 +33,10 @@ class BaseSettingsWidget(QWidget):
 
 class TokenManager(BaseSettingsWidget):
     def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
+        super().__init__('token管理',parent)
         
         # 配置文件路径
-        self.config_path = '../configuration_and_resources/config.json'
+        self.config_path = CONFIG
         
         # 存储token数据 {name: token}
         self.tokens_data = {}
@@ -240,7 +241,7 @@ class TokenManager(BaseSettingsWidget):
 
 class AutoLoginControl(BaseSettingsWidget):
     def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
+        super().__init__('自动登录控制',parent)
         self.layout_ = QVBoxLayout(self)
         self.config = self.load_config_with_format()
 
