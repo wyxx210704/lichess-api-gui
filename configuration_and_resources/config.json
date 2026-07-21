@@ -3,5 +3,12 @@
     "auto_login":{
         "enable": false,
         "token": ""
+    },
+    "function_settings": {
+        "translate": true,
+        "copy_indent": {
+            "enable": true,
+            "indent": 4
+        }
     }
 }

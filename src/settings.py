@@ -279,3 +279,50 @@ class AutoLoginControl(BaseSettingsWidget):
             '提示',
             '保存成功',
         )
+
+class FunctionSettings(BaseSettingsWidget):
+    def __init__(self,parent: QWidget | None = None):
+        super().__init__('功能设置', parent)
+        self.layout_ = QVBoxLayout(self)
+        self.config = self.load_config_with_format()
+
+        self.translate = QCheckBox('启用数据翻译',self)
+        self.layout_.addWidget(self.translate)
+
+        self.group_box = QGroupBox(
+            '复制文字时缩进',
+            self,
+        )
+
+        self.group_box.setCheckable(True)
+        self.layout_.addWidget(self.group_box)
+        self.layout_in_group_box = QHBoxLayout(self.group_box)
+
+        self.layout_in_group_box.addWidget(QLabel('空格数量：'))
+        self.indent_input = QSpinBox(self.group_box)
+        self.indent_input.setRange(1,5)
+        self.layout_in_group_box.addWidget(self.indent_input)
+
+        self.translate.setChecked(self.config['function_settings']['translate'])
+        self.group_box.setChecked(self.config['function_settings']['copy_indent']['enable'])
+        self.indent_input.setValue(self.config['function_settings']['copy_indent']['indent'])
+
+        self.save_button = QPushButton(
+            '保存',
+            self,
+        )
+
+        self.save_button.clicked.connect(self.save_file)
+        self.layout_.addWidget(self.save_button)
+
+    def save_file(self):
+        self.config['function_settings']['translate'] = self.translate.isChecked()
+        self.config['function_settings']['copy_indent']['enable'] = self.group_box.isChecked()
+        self.config['function_settings']['copy_indent']['indent'] = self.indent_input.value()
+
+        self.save_config(self.config)
+        QMessageBox.information(
+            self,
+            '提示',
+            '保存成功',
+        )

@@ -2,15 +2,25 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from json import load,dumps
 
 from translates import *
+from config_format import FunctionSettings
+from costants import CONFIG
 
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):
         super().__init__(parent)
         self.setColumnCount(2)
         self.setHeaderLabels(["索引", "数据"])
+
         self.value = None
+        self.config:FunctionSettings = load(open(
+            CONFIG,
+            'r',
+            encoding='utf-8',
+            errors='ignore',
+        ))['function_settings']
     
     def set_integer(self, value:int):
         """显示整数"""
@@ -112,7 +122,11 @@ class JsonTreeWidget(QTreeWidget):
                         line_item = QTreeWidgetItem(item)
                         line_item.setText(0, f"第{i}行")
                         line_item.setText(1, line)
-                else:item.setText(1,get_value_translate(item_data))
+                else:
+                    if self.config["translate"]:
+                        item.setText(1,get_value_translate(item_data))
+                    else:
+                        item.setText(1,item_data)
             else:
                 item.setText(1, str(item_data))
 
@@ -120,7 +134,11 @@ class JsonTreeWidget(QTreeWidget):
         """递归添加字典项"""
         for key, value in data.items():
             item = QTreeWidgetItem(parent)
-            item.setText(0, get_key_translate(str(key)))
+
+            if self.config["translate"]:
+                item.setText(0, get_key_translate(str(key)))
+            else:
+                item.setText(0,str(key))
             
             if isinstance(value, list):
                 item.setText(1, "[]")
@@ -141,7 +159,11 @@ class JsonTreeWidget(QTreeWidget):
                         line_item = QTreeWidgetItem(item)
                         line_item.setText(0, f"第{i}行")
                         line_item.setText(1, line)
-                else:item.setText(1,get_value_translate(value))
+                else:
+                    if self.config["translate"]:
+                        item.setText(1,get_value_translate(value))
+                    else:
+                        item.setText(1,value)
             else:
                 item.setText(1, str(value))
 
@@ -155,10 +177,23 @@ class JsonTreeWidget(QTreeWidget):
             menu.addAction(copy_action)
 
         copy_all_action = QAction('复制全部内容')
-        copy_all_action.triggered.connect(lambda:QApplication.clipboard().setText(str(self.value)))
+        copy_all_action.triggered.connect(self.copy_all)
         menu.addAction(copy_all_action)
 
         menu.exec(event.globalPos())
+
+    def copy_all(self):
+        if self.config["copy_indent"]["enable"]:
+            QApplication.clipboard().setText(dumps(
+                self.value,
+                ensure_ascii=False,
+                indent=self.config["copy_indent"]["indent"],
+            ))
+        else:
+            QApplication.clipboard().setText(dumps(
+                self.value,
+                ensure_ascii=False,
+            ))
 
 class NoStretchingSvgWidget(QSvgWidget):
     def __init__(self,parent:QWidget|None=None):

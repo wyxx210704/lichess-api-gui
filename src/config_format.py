@@ -4,7 +4,15 @@ class AutoLogin(TypedDict):
     enable:bool
     token:str
 
+class CopyIndent(TypedDict):
+    enable:bool
+    indent:int
+
+class FunctionSettings(TypedDict):
+    translate:bool
+    copy_indent:CopyIndent
+
 class ConfigFormat(TypedDict):
     tokens:dict[str,str]
     auto_login:AutoLogin
-    # 3.0版本的时候会更新所有bot相关配置
+    function_settings:FunctionSettings

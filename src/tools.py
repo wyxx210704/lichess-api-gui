@@ -394,14 +394,13 @@ class SettingsWindow(QMainWindow):
         self.scroll_area.setWidget(self.widget_in_scroll_area)
         self.layout_ = QVBoxLayout(self.widget_in_scroll_area)
 
-        self.setMinimumWidth(335)
+        self.setMinimumWidth(375)
         self.setWindowTitle('设置')
         self.setWindowIcon(QIcon(ICON))
 
         self.layout_.addWidget(TokenManager(self.widget_in_scroll_area))
         self.layout_.addWidget(AutoLoginControl(self.widget_in_scroll_area))
+        self.layout_.addWidget(FunctionSettings(self.widget_in_scroll_area))
 
-        account_info = client.account.get()
         self.status_bar = self.statusBar()
-        self.status_bar.addWidget(QLabel(f'当前登录账号：{account_info["username"]}'))
-        self.status_bar.addWidget(QLabel(f'下棋客户端模式：{'bot' if ('title' in account_info) and (account_info["title"] == 'BOT') else '人类'}模式'))
+        self.status_bar.addWidget(QLabel(f'当前登录账号：{client.account.get()["username"]}，此页面的设置项都是重启后生效'))
