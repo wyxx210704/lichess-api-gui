@@ -3,12 +3,10 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
 from berserk.types.common import VariantKey
-from berserk.types.challenges import ChallengeJson
 import datetime
 import chess
 import chess.svg
 import chess.variant
-import os
 
 from tools import SettingsWindow
 from board_tools import *
@@ -56,10 +54,23 @@ class BoardMain(QMainWindow):
         self.page_challenge()
         self.page_game()
         self.add_action()
+        self.define_constants()
         self.start_thread()
 
         challenge_out = self.mdi_area.addSubWindow(ChallengeWindow(self.client))
         challenge_out.showMaximized()
+
+    def define_constants(self):
+        self.challenge_type_text = {
+            'challenge':'创建',
+            'cancel':'取消',
+            'decline':'拒绝',
+        }
+
+        self.game_type_text = {
+            'start':'开始',
+            'finish':'结束',
+        }
 
     def add_action(self):
         self.challenge_action = QAction('发起挑战')
@@ -211,21 +222,43 @@ class BoardMain(QMainWindow):
         self.worker_thread = QThread()
         self.worker = EventListen(self.client)
         self.worker.moveToThread(self.worker_thread)
+
         self.worker.challenge_update.connect(self.receive_challenge)
         self.worker.ongoing_game_update.connect(self.receive_game)
+        self.worker.state_update.connect(self.receive_state)
 
         self.worker_thread.started.connect(self.worker.run_event)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.start()
 
-    def receive_challenge(self,challenge_dict:dict[str, list[ChallengeJson]]):
-        self.tree_widget_for_challenge.clear()
-        if len(challenge_dict['in']) != 0:
-            self.status_bar.showMessage('当前有挑战待处理，请处理')
-        elif len(self.client.games.get_ongoing()) == 0:
-            self.status_bar.clearMessage()
+    def open_dialog(self,text:str,deta:dict):
+        dialog = QDialog(self)
+        dialog.setWindowTitle('消息')
+        layout = QVBoxLayout(dialog)
 
-        for challenge in challenge_dict['in']:
+        layout.addWidget(QLabel(text))
+        tree_widget = JsonTreeWidget(dialog)
+        tree_widget.set_dict(deta)
+        layout.addWidget(tree_widget)
+
+        button = QPushButton('完成',dialog)
+        button.clicked.connect(dialog.accept)
+        layout.addWidget(button)
+
+        dialog.exec()
+
+    def receive_state(self,state:State,challenge_list:list[ChallengeJson],game_list:list[GameEventInfo]):
+        if state == 'both' or state == 'challenge' or state == 'game':
+            self.tab_widget.setCurrentWidget(self.splitter)
+            if state == 'both':self.status_bar.showMessage('当前同时有挑战和对局没处理')
+            elif state == 'challenge':self.status_bar.showMessage('当前有挑战待处理')
+            elif state == 'game':self.status_bar.showMessage('当前有对局待处理')
+        elif state == 'both_not':self.status_bar.clearMessage()
+
+        self.tree_widget_for_challenge.clear()
+        self.tree_widget_for_game.clear()
+
+        for challenge in challenge_list:
             item = QTreeWidgetItem(self.tree_widget_for_challenge)
 
             item.setText(0,challenge['id'])         
@@ -236,7 +269,7 @@ class BoardMain(QMainWindow):
             item.setText(9,challenge['color'])      
             item.setText(10,challenge['finalColor'])
             item.setText(12,challenge['direction']) 
-
+            
             self.tree_widget_for_challenge.setItemWidget(item,3,InfoButton(challenge['challenger'],self.tree_widget_for_challenge))
             self.tree_widget_for_challenge.setItemWidget(item,4,InfoButton(challenge['destUser'],self.tree_widget_for_challenge))
             self.tree_widget_for_challenge.setItemWidget(item,5,InfoButton(challenge['variant'],self.tree_widget_for_challenge))
@@ -245,14 +278,7 @@ class BoardMain(QMainWindow):
 
             if 'initialFen' in challenge:
                 item.setText(13,challenge['initialFen'])
-
-    def receive_game(self,game_list:list[dict]):
-        self.tree_widget_for_game.clear()
-        if len(game_list) != 0:
-            self.status_bar.showMessage('当前有对局待处理，请处理')
-        elif len(self.client.challenges.get_mine()['in']) == 0:
-            self.status_bar.clearMessage()
-
+        
         for game in game_list:
             item = QTreeWidgetItem(self.tree_widget_for_game)
 
@@ -273,6 +299,12 @@ class BoardMain(QMainWindow):
             self.tree_widget_for_game.setItemWidget(item,6,InfoButton(game['status'],self.tree_widget_for_game))
             self.tree_widget_for_game.setItemWidget(item,7,InfoButton(game['variant'],self.tree_widget_for_game))
             self.tree_widget_for_game.setItemWidget(item,12,InfoButton(game['opponent'],self.tree_widget_for_game))
+
+    def receive_challenge(self,current_challenge:ChallengeJson,type_:ChallengeType):
+        self.open_dialog(f'现在有挑战被{self.challenge_type_text[type_]}，请查收',current_challenge)
+
+    def receive_game(self,current_game:GameEventInfo,type_:ChallengeType):
+        self.open_dialog(f'现在有对局已经{self.game_type_text[type_]}，请查收',current_game)
 
     def example(self):
         #有进来的挑战
