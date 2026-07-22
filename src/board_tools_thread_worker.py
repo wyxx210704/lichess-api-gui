@@ -2,6 +2,7 @@ from PyQt6.QtCore import *
 from berserk import Client
 from time import sleep
 from berserk.types.common import *
+from berserk.exceptions import ResponseError
 
 class ChallengeListen(QObject):
     challenge_update = pyqtSignal(dict)
@@ -22,6 +23,7 @@ class ChallengeListen(QObject):
 
 class CreateGameWorker(QObject):
     end_event = pyqtSignal()
+    error_event = pyqtSignal(Exception)
 
     def __init__(self,client:Client,time: int,increment: int,rated: bool = False,variant: VariantKey = "standard",color: Color | Literal['random'] = "random",rating_range: str | tuple[int, int] | list[int] | None = None):
         super().__init__()
@@ -36,5 +38,7 @@ class CreateGameWorker(QObject):
         ]
 
     def run_event(self):
-        self.client.board.seek(*self.configs)
-        self.end_event.emit()
+        try:self.client.board.seek(*self.configs)
+        except Exception as error:
+            self.error_event.emit(error)
+        else:self.end_event.emit()
