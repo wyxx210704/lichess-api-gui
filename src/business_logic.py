@@ -1,10 +1,11 @@
 from berserk import *
+from berserk.exceptions import ResponseError
 import sys
 from typing import Callable
 from PyQt6.QtWidgets import *
 from json import load
 
-from tools import LoginWizard,ErrorMessageBox
+from tools import *
 from config_format import ConfigFormat
 from costants import CONFIG
 
@@ -23,6 +24,12 @@ def login_with_wizard():
 
 def login():
     try:auto_login = load_config_with_format()['auto_login']['enable']
+    except ResponseError as error:
+        auto_login = False
+        show_api_error_dialog(
+            error,
+            '自动登录状态加载失败',
+        )
     except Exception as error:
         auto_login = False
         show_error_dialog(*get_error_details(error),'自动登录状态加载失败')
@@ -31,6 +38,11 @@ def login():
         try:
             client = Client(TokenSession(load_config_with_format()['auto_login']['token']))
             user_info = client.account.get()
+        except ResponseError as error:
+            show_api_error_dialog(
+                error,
+                '自动登录失败',
+            )
         except Exception as error:
             show_error_dialog(*get_error_details(error),'自动登录失败')
             return login_with_wizard()
@@ -45,6 +57,11 @@ def run_function(progress_bar:QProgressBar,func:Callable):
     progress_bar.setRange(0,0)
 
     try:func()
+    except ResponseError as error:
+        show_api_error_dialog(
+            error,
+            '调用API报错',
+        )
     except Exception as error:show_error_dialog(*get_error_details(error),'调用API报错')
 
     progress_bar.setRange(0,100)
@@ -82,15 +99,9 @@ def get_error_details(e: Exception) -> tuple[str, int, str, str]:
     return filename, line_number, error_type, error_msg
 
 def show_error_dialog(filename:str, line_number:int, error_type:str, error_message:str, title:str,parent:QWidget|None=None):
-    """
-    显示错误消息框的便捷函数
-    
-    Args:
-        filename: 发生错误的文件名
-        line_number: 错误发生的行号
-        error_type: 错误类型
-        error_message: 错误详细信息
-        parent: 父窗口
-    """
     dialog = ErrorMessageBox(filename, line_number, error_type, error_message, title,parent)
+    dialog.exec()
+
+def show_api_error_dialog(error:ResponseError, title:str,parent:QWidget|None=None):
+    dialog = ApiErrorMessageBox(error, title,parent)
     dialog.exec()

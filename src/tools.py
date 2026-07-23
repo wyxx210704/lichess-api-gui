@@ -3,6 +3,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from typing import Generator
 from berserk import *
+from berserk.exceptions import ResponseError
 import chess
 import chess.svg
 
@@ -321,17 +322,6 @@ class LoginWizard(QWizard):
         QVBoxLayout(self.page_3).addWidget(token_manager)
 
 class ErrorMessageBox(QDialog):
-    """
-    自定义错误信息展示消息框
-    
-    参数:
-        file_name: 错误发生文件名 (str)
-        line_number: 错误发生行号 (int)
-        error_type: 错误类型 (str)
-        error_message: 错误信息 (str)
-        title: 窗口标题 (str, 默认: "错误")
-    """
-    
     def __init__(self, file_name:str, line_number:int, error_type:str, error_message:str, title:str="错误", parent:QWidget|None=None):
         super().__init__(parent)
         self.layout_ = QFormLayout(self)
@@ -373,6 +363,48 @@ class ErrorMessageBox(QDialog):
             第几行：{self.line_number}
             报错类型：{self.error_type}
             报错信息：{self.error_message}
+            '''
+        )
+
+class ApiErrorMessageBox(QDialog):
+    def __init__(self, error:ResponseError, title:str="错误", parent:QWidget|None=None):
+        super().__init__(parent)
+        self.layout_ = QFormLayout(self)
+
+        self.setWindowTitle(title)
+        self.setWindowIcon(QIcon(ICON))
+
+        self.status_code = error.status_code
+        self.reason = error.reason
+        self.cause = error.cause
+
+        self.layout_.addRow('状态码',QLabel(str(self.status_code)))
+        self.layout_.addRow('报错文字',QLabel(str(self.reason)))
+        self.layout_.addRow('详细信息',QLabel(str(self.cause)))
+
+        self.button_1 = QPushButton(
+            '复制',
+            self
+        )
+
+        self.button_2 = QPushButton(
+            '完成',
+            self
+        )
+
+        self.button_1.clicked.connect(self.copy_info_to_clipboard)
+        self.button_2.clicked.connect(self.accept)
+        self.layout_.addRow(self.button_1,self.button_2)
+
+    def copy_info_to_clipboard(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(
+            f'''
+            api调用出错
+            ------------------------------
+            状态码：{self.status_code}
+            报错文字：{self.reason}
+            详细信息：{self.cause}
             '''
         )
 

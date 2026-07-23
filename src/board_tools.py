@@ -6,7 +6,7 @@ from berserk.types.challenges import ChallengeJson
 from board_tools_thread_worker import *
 from board_widget import InfoButton
 from input_dialogs import *
-from business_logic import get_error_details,show_error_dialog
+from business_logic import *
 
 class CreateChallengeDialog(QDialog):
     def __init__(self, parent:QWidget|None = None):
@@ -155,6 +155,10 @@ class ChallengeWindow(QWidget):
         self.create_challenge_button.clicked.connect(self.create_challenge)
         self.layout_for_buttons.addWidget(self.create_challenge_button)
 
+        self.create_challenge_button = QPushButton('取消',self)
+        self.create_challenge_button.clicked.connect(self.cancel_challenge)
+        self.layout_for_buttons.addWidget(self.create_challenge_button)
+
         self.match_ai_button = QPushButton('挑战AI',self)
         self.match_ai_button.clicked.connect(self.challenge_ai)
         self.layout_for_buttons.addWidget(self.match_ai_button)
@@ -187,12 +191,28 @@ class ChallengeWindow(QWidget):
                     is_rated,
                     *dialog.get_deta(),
                 ) 
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '创建挑战时报错',
+                    self,
+                )
             except Exception as error:
                 show_error_dialog(
                     *get_error_details(error),
                     '创建挑战时报错',
                     self,
                 )
+
+    def cancel_challenge(self):
+        item = self.tree_widget.currentItem()
+    
+        if item:self.client.challenges.cancel(item.text(0))
+        else:QMessageBox.critical(
+            self,
+            '错误',
+            '请先选中一项挑战之后再取消',
+        )
 
     def challenge_ai(self):
         ai_level = get_int(self,'输入AI等级',1,8)
@@ -204,6 +224,12 @@ class ChallengeWindow(QWidget):
                     ai_level,
                     *dialog.get_deta(),
                 ) 
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '创建挑战时报错',
+                    self,
+                )
             except Exception as error:
                 show_error_dialog(
                     *get_error_details(error),
@@ -277,11 +303,18 @@ class ChallengeWindow(QWidget):
         self.create_game_button.setText('在大厅中创建对局')
 
     def receive_error(self,error:Exception):
-        show_error_dialog(
-            *get_error_details(error),
-            '创建对局时报错',
-            self,
-        )
+        if type(error) == ResponseError:
+            show_api_error_dialog(
+                error,
+                '创建对局时报错',
+                self,
+            )
+        else:
+            show_error_dialog(
+                *get_error_details(error),
+                '创建对局时报错',
+                self,
+            )
 
         self.create_game_button.setEnabled(True)
         self.create_game_button.setText('在大厅中创建对局')

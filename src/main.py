@@ -5,7 +5,9 @@ import os.path
 
 from widgets import JsonTreeWidget
 from start_play_chess import turn_from_main
-from events import *
+from input_dialogs import *
+from business_logic import *
+from sub_window import *
 from costants import ICON
 
 app = QApplication([])
@@ -114,13 +116,6 @@ get_difficulty = QAction('根据难度获取谜题')
 get_difficulty.setShortcut('Ctrl+Shift+P, I')
 get_difficulty.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.puzzles.get_next(None,get_item(window,'选择难度',["easiest", "easier", "normal", "harder", "hardest"])))))
 puzzles_menu.addAction(get_difficulty)
-
-puzzles_menu.addSeparator()
-
-view_puzzle = QAction('在独立窗口中查看谜题')
-view_puzzle.setShortcut('Ctrl+Shift+P, V')
-view_puzzle.triggered.connect(lambda:start_puzzle_viewer(client,window))
-puzzles_menu.addAction(view_puzzle)
 
 export_json = QAction('导出单个对局（json）')
 export_json.setShortcut('Ctrl+Shift+G, E, J')

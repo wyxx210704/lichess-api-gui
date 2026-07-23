@@ -594,6 +594,12 @@ class GameWindow(QMainWindow):
                 ) 
 
                 self.move_input.clear()
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '走棋时发生错误',
+                    self,
+                )
             except Exception as error:
                 show_error_dialog(
                     *get_error_details(error),
@@ -605,6 +611,12 @@ class GameWindow(QMainWindow):
         if self.abortable:
             if self.ask_quastion('对局暂未走满一步，是否终止对局'):
                 try:self.client.board.abort_game(self.game_id) 
+                except ResponseError as error:
+                    show_api_error_dialog(
+                        error,
+                        '终止对局时发生错误',
+                        self,
+                    )
                 except Exception as error:
                     show_error_dialog(
                         *get_error_details(error),
@@ -614,6 +626,12 @@ class GameWindow(QMainWindow):
         else:
             if self.ask_quastion('是否确认悔棋（需要对手同意）'):
                 try:self.client.board.offer_takeback(self.game_id) 
+                except ResponseError as error:
+                    show_api_error_dialog(
+                        error,
+                        '悔棋时发生错误',
+                        self,
+                    )
                 except Exception as error:
                     show_error_dialog(
                         *get_error_details(error),
@@ -624,6 +642,12 @@ class GameWindow(QMainWindow):
     def draw(self):
         if self.ask_quastion('是否确认和棋（需要对手同意）'):
             try:self.client.board.offer_draw(self.game_id) 
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '和棋时发生错误',
+                    self,
+                )
             except Exception as error:
                 show_error_dialog(
                     *get_error_details(error),
@@ -634,6 +658,12 @@ class GameWindow(QMainWindow):
     def defeat(self):
         if self.ask_quastion('是否认输'):
             try:self.client.board.resign_game(self.game_id) 
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '认输时发生错误',
+                    self,
+                )
             except Exception as error:
                 show_error_dialog(
                     *get_error_details(error),
@@ -650,6 +680,12 @@ class GameWindow(QMainWindow):
             )
 
             self.msg_input.clear()
+        except ResponseError as error:
+            show_api_error_dialog(
+                error,
+                '发送消息时发生错误',
+                self,
+            )
         except Exception as error:
             show_error_dialog(
                 *get_error_details(error),
