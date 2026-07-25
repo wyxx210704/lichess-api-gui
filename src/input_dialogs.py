@@ -1,16 +1,16 @@
 from PyQt6.QtWidgets import *
+from berserk import Client
 
 from costants import PERFS
+from tools import GetUserNameDialog
 
-def get_user_name(parent:QWidget|None=None,title:str='输入用户'):
-    text, ok = QInputDialog.getText(
-        parent,
-        title,          # 对话框标题
-        "请输入用户名称：",   # 提示标签文本
-    )
+def get_user_name(client:Client,parent:QWidget|None=None,title:str='输入用户'):
+    dialog = GetUserNameDialog(client,parent)
+    dialog.setWindowTitle(title)
 
-    if ok and text:return text
-    else:return 'default'
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return dialog.get_user_name() if dialog.get_user_name() != '' else 'default'
+    else:return 'default'#默认值该用户真实存在，不信你就访问https://lichess.org/@default
     
 def get_id(parent:QWidget|None=None,puzzles:bool=False,title:str='输入编号'):
     # puzzles的意思是获取的是谜题编号还是对局编号
@@ -23,8 +23,8 @@ def get_id(parent:QWidget|None=None,puzzles:bool=False,title:str='输入编号')
     if ok and text:
         return text
     else:
-        if puzzles:return 'OCfB9'#默认值就随便写一个谜题编号
-        else:return 'OYzGF6fS'#默认值随便写一个已经结束的对局编号
+        if puzzles:return 'OCfB9'#默认值就随便写一个谜题编号，不信你就访问https://lichess.org/api/puzzle/OCfB9
+        else:return 'OYzGF6fS'#默认值随便写一个已经结束的对局编号，不信你就访问https://lichess.org/api/game/OYzGF6fS
     
 def get_item(parent:QWidget|None=None,title:str='选择一个选项',items:list[str]=PERFS):
     text, ok = QInputDialog.getItem(
@@ -35,7 +35,7 @@ def get_item(parent:QWidget|None=None,title:str='选择一个选项',items:list[
         0,
         False
     )
-
+    QInputDialog.getItem()
     if ok and text:return text
     else:return items[0]
 

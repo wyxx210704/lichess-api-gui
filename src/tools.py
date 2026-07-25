@@ -408,13 +408,6 @@ class ApiErrorMessageBox(QDialog):
             '''
         )
 
-class NoCloseProgressDialog(QProgressDialog):
-    def __init__(self, labelText:str,parent:QWidget|None=None):
-        super().__init__(labelText,None, 0,0, parent)
-        self.setWindowTitle('进程正在执行中')
-        self.setCancelButton(None)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-
 class SettingsWindow(QMainWindow):
     def __init__(self,client:Client):
         super().__init__()
@@ -436,3 +429,34 @@ class SettingsWindow(QMainWindow):
 
         self.status_bar = self.statusBar()
         self.status_bar.addWidget(QLabel(f'当前登录账号：{client.account.get()["username"]}，此页面的设置项都是重启后生效'))
+
+class GetUserNameDialog(QDialog):
+    def __init__(self,client:Client,parent:QWidget|None = None):
+        super().__init__(parent)
+        self.layout_ = QVBoxLayout(self)
+        self.layout_.addWidget(QLabel('请输入一个用户'))
+
+        self.line_edit = QLineEdit(self)
+        self.line_edit.setPlaceholderText('在此处输入用户')
+        self.layout_.addWidget(self.line_edit)
+
+        self.layout_.addWidget(HorizontalLine(self))
+        self.layout_.addWidget(QLabel('或者在已关注列表中选择用户'))
+
+        self.list_widget = QListWidget(self)
+        self.list_widget.currentTextChanged.connect(self.line_edit.setText)
+        self.layout_.addWidget(self.list_widget)
+
+        for user in client.relations.get_users_followed():
+            self.list_widget.addItem(user['username'])
+
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        self.layout_.addWidget(self.buttons)
+
+    def get_user_name(self):return self.line_edit.text()

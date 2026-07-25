@@ -5,6 +5,7 @@ import os.path
 
 from widgets import JsonTreeWidget
 from start_play_chess import turn_from_main
+from custom_api import *
 from input_dialogs import *
 from business_logic import *
 from sub_window import *
@@ -23,7 +24,7 @@ window.setMinimumWidth(400)
 menu_bar = window.menuBar()
 
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本2.10'))
+status_bar.addWidget(QLabel('lichess-api-gui 版本2.12'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -42,7 +43,7 @@ window.resize(
 )
 
 account_menu = menu_bar.addMenu('账号')
-users_menu = menu_bar.addMenu('查询用户')
+users_menu = menu_bar.addMenu('用户与社区')
 puzzles_menu = menu_bar.addMenu('谜题')
 game_menu = menu_bar.addMenu('对局')
 more_menu = menu_bar.addMenu('更多')
@@ -62,9 +63,14 @@ get_preferences.setShortcut('Ctrl+Shift+A, P')
 get_preferences.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.account.get_preferences())))
 account_menu.addAction(get_preferences)
 
+get_timeline = QAction('时间线')
+get_timeline.setShortcut('Ctrl+Shift+A, T')
+get_timeline.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(get_my_timeline(client))))
+account_menu.addAction(get_timeline)
+
 get_activity_feed = QAction('用户最近活动动态')
 get_activity_feed.setShortcut('Ctrl+Shift+U, A')
-get_activity_feed.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(client.users.get_activity_feed(get_user_name(window)))))
+get_activity_feed.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(client.users.get_activity_feed(get_user_name(client,window)))))
 users_menu.addAction(get_activity_feed)
 
 get_all_top_10 = QAction('全部排行榜前十名')
@@ -74,7 +80,7 @@ users_menu.addAction(get_all_top_10)
 
 get_crosstable = QAction('两个用户之间的对战数据')
 get_crosstable.setShortcut('Ctrl+Shift+U, C')
-get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(get_user_name(window,'输入第一个用户'),get_user_name(window,'输入第二个用户'),get_bool(window,'是否获取当前比赛数据')))))
+get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(get_user_name(client,window,'输入第一个用户'),get_user_name(client,window,'输入第二个用户'),get_bool(window,'是否获取当前比赛数据')))))
 users_menu.addAction(get_crosstable)
 
 get_leaderboard = QAction('某个特定种类的排行榜')
@@ -89,18 +95,35 @@ users_menu.addAction(get_live_streamers)
 
 get_public_data = QAction('用户公开资料')
 get_public_data.setShortcut('Ctrl+Shift+U, P')
-get_public_data.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_public_data(get_user_name(window)))))
+get_public_data.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_public_data(get_user_name(client,window)))))
 users_menu.addAction(get_public_data)
 
 get_rating_history = QAction('用户等级分变化历史')
 get_rating_history.setShortcut('Ctrl+Shift+U, R')
-get_rating_history.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(client.users.get_rating_history(get_user_name(window)))))
+get_rating_history.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(client.users.get_rating_history(get_user_name(client,window)))))
 users_menu.addAction(get_rating_history)
 
 get_user_performance = QAction('用户在单个性能指标上的表现统计')
 get_user_performance.setShortcut('Ctrl+Shift+U, U')
-get_user_performance.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_user_performance(get_user_name(window),get_item(window,'选择棋的种类',PERFS)))))
+get_user_performance.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_user_performance(get_user_name(client,window),get_item(window,'选择棋的种类',PERFS)))))
 users_menu.addAction(get_user_performance)
+
+users_menu.addSeparator()
+
+follow_user = QAction('关注用户')
+follow_user.setShortcut('Ctrl+Shift+F, T')
+follow_user.triggered.connect(lambda:run_function(progress_bar,lambda:client.relations.follow(get_user_name(client,window,'输入要关注的用户'))))
+users_menu.addAction(follow_user)
+
+unfollow_user = QAction('取消关注用户')
+unfollow_user.setShortcut('Ctrl+Shift+F, F')
+unfollow_user.triggered.connect(lambda:run_function(progress_bar,lambda:client.relations.unfollow(get_user_name(client,window,'输入要取消关注的用户'))))
+users_menu.addAction(unfollow_user)
+
+get_followed_user = QAction('获取已关注的用户')
+get_followed_user.setShortcut('Ctrl+Shift+F, F')
+get_followed_user.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.relations.get_users_followed()))))
+users_menu.addAction(get_followed_user)
 
 get_puzzle = QAction('获取特定编号的谜题')
 get_puzzle.setShortcut('Ctrl+Shift+P, P')
@@ -148,7 +171,7 @@ game_menu.addAction(export_pgn)
 export_by_player_json = QAction('批量导出用户对局（json）')
 export_by_player_json.setShortcut('Ctrl+Shift+G, P, J')
 export_by_player_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
-    get_user_name(window,'输入：要导出谁的对局'),
+    get_user_name(client,window,'输入：要导出谁的对局'),
     False,
     None,
     None,
@@ -175,7 +198,7 @@ game_menu.addAction(export_by_player_json)
 export_by_player_pgn = QAction('批量导出用户对局（pgn）')
 export_by_player_pgn.setShortcut('Ctrl+Shift+G, P, P')
 export_by_player_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
-    get_user_name(window,'输入：要导出谁的对局'),
+    get_user_name(client,window,'输入：要导出谁的对局'),
     True,
     None,
     None,

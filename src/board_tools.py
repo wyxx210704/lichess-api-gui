@@ -180,7 +180,7 @@ class ChallengeWindow(QWidget):
         self.worker_thread.start()
 
     def create_challenge(self):
-        user_name = get_user_name(self,'输入被挑战的用户')
+        user_name = get_user_name(self.client,self,'输入被挑战的用户')
         is_rated = get_bool(self,'是否排位')
         dialog = CreateChallengeDialog(self)
 
