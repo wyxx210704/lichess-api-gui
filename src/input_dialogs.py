@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import *
 from berserk import Client
 
 from costants import PERFS
-from tools import GetUserNameDialog
+from input_dialog_tools import *
 
 def get_user_name(client:Client,parent:QWidget|None=None,title:str='输入用户'):
     dialog = GetUserNameDialog(client,parent)
@@ -63,18 +63,6 @@ def get_bool(parent:QWidget|None=None,text:str='是否执行操作'):
     if button == QMessageBox.StandardButton.Yes:return True
     else:return False
 
-def get_screening(parent:QWidget|None=None,filtering_content:str='筛选内容'):
-    button = QMessageBox.question(
-        parent,
-        '筛选（点中间按钮则不筛选）',
-        '是否包含'+filtering_content,
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Ignore,
-    )
-
-    if button == QMessageBox.StandardButton.Yes:return True
-    elif button == QMessageBox.StandardButton.No:return False
-    else:return None
-
 def get_pgn(parent:QWidget|None=None,title:str='输入PGN'):
     text, ok = QInputDialog.getMultiLineText(
         parent,
@@ -84,3 +72,38 @@ def get_pgn(parent:QWidget|None=None,title:str='输入PGN'):
 
     if ok and text:return text
     else:return '*'
+
+def get_export_game_opration(parent:QWidget|None=None):
+    dialog = GetExportGameOprationDialog(parent)
+    
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return dialog.get_value() 
+    else:return {
+        'moves':None,
+        'tags':None,
+        'clocks':None,
+        'evals':None,
+        'opening':None,
+        'literate':None,
+    }
+
+def get_export_game_screening(parent:QWidget|None=None):
+    dialog = GetExportGameScreeningDialog(parent)
+    
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return dialog.get_value() 
+    else:return {
+        'since':None,
+        'until':None,
+        'max':None,
+        'vs':None,
+        'rated':None,
+        'perf_type':None,
+        'color':None,
+        'analysed':None,
+        'pgn_in_json':None,
+        'ongoing':None,
+        'finished':None,
+        'players':None,
+        'sort':None,
+    }

@@ -22,9 +22,7 @@ client,is_bot = login()
 window = QMainWindow()
 window.setMinimumWidth(400)
 menu_bar = window.menuBar()
-
 status_bar = window.statusBar()
-status_bar.addWidget(QLabel('lichess-api-gui 版本2.12'))
 
 progress_bar = QProgressBar()
 progress_bar.setRange(0,100)
@@ -80,7 +78,11 @@ users_menu.addAction(get_all_top_10)
 
 get_crosstable = QAction('两个用户之间的对战数据')
 get_crosstable.setShortcut('Ctrl+Shift+U, C')
-get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(get_user_name(client,window,'输入第一个用户'),get_user_name(client,window,'输入第二个用户'),get_bool(window,'是否获取当前比赛数据')))))
+get_crosstable.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.users.get_crosstable(
+    get_user_name(client,window,'输入第一个用户'),
+    get_user_name(client,window,'输入第二个用户'),
+    get_bool(window,'是否获取当前比赛数据'),
+))))
 users_menu.addAction(get_crosstable)
 
 get_leaderboard = QAction('某个特定种类的排行榜')
@@ -122,7 +124,7 @@ users_menu.addAction(unfollow_user)
 
 get_followed_user = QAction('获取已关注的用户')
 get_followed_user.setShortcut('Ctrl+Shift+F, F')
-get_followed_user.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.relations.get_users_followed()))))
+get_followed_user.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(generator_to_list(client.relations.get_users_followed(),window))))
 users_menu.addAction(get_followed_user)
 
 get_puzzle = QAction('获取特定编号的谜题')
@@ -142,84 +144,32 @@ puzzles_menu.addAction(get_difficulty)
 
 export_json = QAction('导出单个对局（json）')
 export_json.setShortcut('Ctrl+Shift+G, E, J')
-export_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(
-    get_id(window,False,'输入要导出的对局编号'),
-    False,
-    get_bool(window,'是否添加棋谱'),
-    get_bool(window,'是否添加标签'),
-    get_bool(window,'是否添加时钟'),
-    get_bool(window,'是否添加分析'),
-    get_bool(window,'是否添加开局'),
-    get_bool(window,'是否添加注释'),
-))))
+export_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(client.games.export(get_id(window,False,'输入要导出的对局编号'),False,**get_export_game_opration(window)))))
 game_menu.addAction(export_json)
 
 export_pgn = QAction('导出单个对局（pgn）')
 export_pgn.setShortcut('Ctrl+Shift+G, E, P')
-export_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_string(client.games.export(
-    get_id(window,False,'输入要导出的对局编号'),
-    True,
-    get_bool(window,'是否添加棋谱'),
-    get_bool(window,'是否添加标签'),
-    get_bool(window,'是否添加时钟'),
-    get_bool(window,'是否添加分析'),
-    get_bool(window,'是否添加开局'),
-    get_bool(window,'是否添加注释'),
-))))
+export_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_string(client.games.export(get_id(window,False,'输入要导出的对局编号'),True,**get_export_game_opration(window)))))
 game_menu.addAction(export_pgn)
 
 export_by_player_json = QAction('批量导出用户对局（json）')
 export_by_player_json.setShortcut('Ctrl+Shift+G, P, J')
-export_by_player_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
+export_by_player_json.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(generator_to_list(client.games.export_by_player(
     get_user_name(client,window,'输入：要导出谁的对局'),
     False,
-    None,
-    None,
-    get_int(window,'要导出多少对局'),
-    None,
-    get_screening(window,'排位对局'),
-    get_item(window,'选择变体',PERFS),
-    None,
-    get_screening(window,'已分析的对局'),
-    get_bool(window,'是否添加棋谱'),
-    get_bool(window,'pgn是否在json里面'),
-    get_bool(window,'是否添加标签'),
-    get_bool(window,'是否添加时钟'),
-    get_bool(window,'是否添加分析'),
-    get_bool(window,'是否添加开局'),
-    get_screening(window,'正在进行的对局'),
-    get_screening(window,'已结束的对局'),
-    None,
-    None,
-    get_bool(window,'是否添加注释'),
-)))))
+    **get_export_game_screening(window),
+    **get_export_game_opration(window),
+),window))))
 game_menu.addAction(export_by_player_json)
 
 export_by_player_pgn = QAction('批量导出用户对局（pgn）')
 export_by_player_pgn.setShortcut('Ctrl+Shift+G, P, P')
-export_by_player_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(list(client.games.export_by_player(
+export_by_player_pgn.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_list(generator_to_list(client.games.export_by_player(
     get_user_name(client,window,'输入：要导出谁的对局'),
     True,
-    None,
-    None,
-    get_int(window,'要导出多少对局'),
-    None,
-    get_screening(window,'排位对局'),
-    get_item(window,'选择变体',PERFS),
-    None,
-    get_screening(window,'已分析的对局'),
-    get_bool(window,'是否添加棋谱'),
-    None,
-    get_bool(window,'是否添加标签'),
-    get_bool(window,'是否添加时钟'),
-    get_bool(window,'是否添加分析'),
-    get_bool(window,'是否添加开局'),
-    get_screening(window,'正在进行的对局'),
-    get_screening(window,'已结束的对局'),
-    None,
-    None,
-    get_bool(window,'是否添加注释'),
-)))))
+    **get_export_game_screening(window),
+    **get_export_game_opration(window),
+),window))))
 game_menu.addAction(export_by_player_pgn)
 
 game_menu.addSeparator()

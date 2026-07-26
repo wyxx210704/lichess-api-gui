@@ -2,7 +2,8 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtSvgWidgets import QSvgWidget
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
-from json import load,dumps
+from json import *
+from datetime import datetime
 
 from translates import *
 from config_format import FunctionSettings
@@ -13,6 +14,7 @@ class JsonTreeWidget(QTreeWidget):
         super().__init__(parent)
         self.setColumnCount(2)
         self.setHeaderLabels(["索引", "数据"])
+        self.setColumnWidth(0,250)
 
         self.value = None
         self.config:FunctionSettings = load(open(
@@ -183,16 +185,24 @@ class JsonTreeWidget(QTreeWidget):
         menu.exec(event.globalPos())
 
     def copy_all(self):
+        class DateTimeEncoder(JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()  # 转换为 ISO 8601 字符串
+                return super().default(obj)
+
         if self.config["copy_indent"]["enable"]:
             QApplication.clipboard().setText(dumps(
                 self.value,
                 ensure_ascii=False,
                 indent=self.config["copy_indent"]["indent"],
+                cls=DateTimeEncoder,
             ))
         else:
             QApplication.clipboard().setText(dumps(
                 self.value,
                 ensure_ascii=False,
+                cls=DateTimeEncoder,
             ))
 
 class NoStretchingSvgWidget(QSvgWidget):
@@ -235,8 +245,3 @@ class ControllableWizardPage(QWizardPage):
 
     def isComplete(self):
         return self.state
-    
-class HorizontalLine(QFrame):
-    def __init__(self, parent:QWidget|None=None):
-        super().__init__(parent)
-        self.setFrameShape(QFrame.Shape.HLine)

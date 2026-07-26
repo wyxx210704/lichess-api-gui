@@ -9,7 +9,7 @@ import chess.svg
 
 from widgets import *
 from settings import *
-from thread_worker import GameViewerWorker
+from thread_worker import *
 from costants import ICON,CONFIG
 
 class GameViewer(QWidget):
@@ -430,33 +430,48 @@ class SettingsWindow(QMainWindow):
         self.status_bar = self.statusBar()
         self.status_bar.addWidget(QLabel(f'当前登录账号：{client.account.get()["username"]}，此页面的设置项都是重启后生效'))
 
-class GetUserNameDialog(QDialog):
-    def __init__(self,client:Client,parent:QWidget|None = None):
-        super().__init__(parent)
-        self.layout_ = QVBoxLayout(self)
-        self.layout_.addWidget(QLabel('请输入一个用户'))
-
-        self.line_edit = QLineEdit(self)
-        self.line_edit.setPlaceholderText('在此处输入用户')
-        self.layout_.addWidget(self.line_edit)
-
-        self.layout_.addWidget(HorizontalLine(self))
-        self.layout_.addWidget(QLabel('或者在已关注列表中选择用户'))
-
-        self.list_widget = QListWidget(self)
-        self.list_widget.currentTextChanged.connect(self.line_edit.setText)
-        self.layout_.addWidget(self.list_widget)
-
-        for user in client.relations.get_users_followed():
-            self.list_widget.addItem(user['username'])
-
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok |
-            QDialogButtonBox.StandardButton.Cancel
+class GeneratorToListDialog(QProgressDialog):
+    def __init__(self,generator:Generator,parent:QWidget|None=None):
+        super().__init__(
+            '当前生成器正在处理信息中，请等候',
+            '取消',
+            0,
+            0,
+            parent,
         )
 
-        self.buttons.accepted.connect(self.accept)
-        self.buttons.rejected.connect(self.reject)
-        self.layout_.addWidget(self.buttons)
+        self.setWindowTitle('进程执行中')
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowCloseButtonHint)
+        self.canceled.connect(self.cancel_event)
 
-    def get_user_name(self):return self.line_edit.text()
+        self.worker_thread = QThread()
+        self.worker = GeneratorToListWorker(generator)
+        
+        self.worker.moveToThread(self.worker_thread)
+        self.worker.send_list.connect(self.receive_list)
+        
+        self.worker_thread.started.connect(self.worker.run_event)
+        self.worker_thread.finished.connect(self.on_thread_end)
+        self.worker_thread.start()
+
+    def receive_list(self,final_list:list):self.final_list = final_list
+    def get_list(self):return self.final_list
+
+    def on_thread_end(self):
+        self.worker_thread.deleteLater()
+        self.accept()
+
+    def stop_thread(self):
+        if self.worker_thread.isRunning():
+            self.worker.stop()
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+            self.worker_thread.deleteLater()
+
+    def closeEvent(self,event:QCloseEvent):
+        self.stop_thread()
+        super().closeEvent(event)
+
+    def cancel_event(self):
+        self.stop_thread()
+        self.reject()

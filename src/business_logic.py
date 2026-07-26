@@ -105,3 +105,10 @@ def show_error_dialog(filename:str, line_number:int, error_type:str, error_messa
 def show_api_error_dialog(error:ResponseError, title:str,parent:QWidget|None=None):
     dialog = ApiErrorMessageBox(error, title,parent)
     dialog.exec()
+
+def generator_to_list(generator:Generator,parent:QWidget|None=None):
+    dialog = GeneratorToListDialog(generator,parent)
+
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return dialog.get_list()
+    else:return ['用户取消了操作']
