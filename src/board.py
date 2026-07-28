@@ -3,12 +3,12 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
 from berserk.types.common import VariantKey
-import datetime
 import chess
 import chess.svg
 import chess.variant
 
 from tools import SettingsWindow
+from chess_general_logic import generate_svg_from_uci
 from board_tools import *
 from board_widget import *
 from board_thread_worker import *
@@ -428,68 +428,9 @@ class GameWindow(QMainWindow):
         self.create_game_operation()
 
     def create_scroll_area(self):
-        self.scroll_area = QScrollArea(self)
+        self.scroll_area = GameInfoWidget(self)
         self.scroll_area.setWidgetResizable(True)
         self.info_widget.addWidget(self.scroll_area)
-
-        self.scroll_area_widget = QWidget(self.scroll_area)
-        self.scroll_area.setWidget(self.scroll_area_widget)
-        self.layout_in_scroll_area = QVBoxLayout(self.scroll_area_widget)
-
-        self.create_basic_info()
-        self.create_time_display()
-        self.create_variant()
-        self.create_player_info()
-
-    def create_basic_info(self):
-        self.basic_info = QGroupBox('基本信息',self.scroll_area_widget)
-        self.layout_in_scroll_area.addWidget(self.basic_info)
-        self.layout_in_basic_info = QFormLayout(self.basic_info)
-
-        self.id = StringDisplay(self.basic_info)
-        self.speed = StringDisplay(self.basic_info)
-        self.is_rated = BoolDisplay(self.basic_info)
-        self.perf = StringDisplay(self.basic_info)
-        self.start_fen = StringDisplay(self.basic_info)
-
-        self.create_time = QDateTimeEdit(self.basic_info)
-        self.create_time.setReadOnly(True)
-
-        self.layout_in_basic_info.addRow('编号',self.id)
-        self.layout_in_basic_info.addRow('速度',self.speed)
-        self.layout_in_basic_info.addRow('是否排位',self.is_rated)
-        self.layout_in_basic_info.addRow('种类',self.perf)
-        self.layout_in_basic_info.addRow('创建时间',self.create_time)
-        self.layout_in_basic_info.addRow('初始局面',self.start_fen)
-
-    def create_time_display(self):
-        self.time_display = QGroupBox('时间',self.scroll_area_widget)
-        self.layout_in_scroll_area.addWidget(self.time_display)
-        self.layout_in_time_display = QFormLayout(self.time_display)
-
-        self.basic_time = TimedeltaDisplayWidget(self.time_display)
-        self.increment = IntDisplay(self.time_display)
-        self.layout_in_time_display.addRow('基本时间',self.basic_time)
-        self.layout_in_time_display.addRow('每步增加时间（秒）',self.increment)
-
-    def create_variant(self):
-        self.variant = QGroupBox('变体',self.scroll_area_widget)
-        self.layout_in_scroll_area.addWidget(self.variant)
-        self.layout_in_variant = QFormLayout(self.variant)
-
-        self.variant_key = StringDisplay(self.variant)
-        self.variant_name = StringDisplay(self.variant)
-        self.variant_short = StringDisplay(self.variant)
-
-        self.layout_in_variant.addRow('键',self.variant_key)
-        self.layout_in_variant.addRow('名称',self.variant_name)
-        self.layout_in_variant.addRow('短名称',self.variant_short)
-
-    def create_player_info(self):
-        self.white_player = PlayerInfo(True,self.scroll_area_widget)
-        self.black_player = PlayerInfo(False,self.scroll_area_widget)
-        self.layout_in_scroll_area.addWidget(self.white_player)
-        self.layout_in_scroll_area.addWidget(self.black_player)
 
     def create_current_clock(self):
         self.current_clock = QGroupBox('剩余时间',self.info_widget)
@@ -703,111 +644,34 @@ class GameWindow(QMainWindow):
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.start()
 
-    def generate_svg_from_uci(self,uci_moves: str, orientation: chess.Color, variant: VariantKey, start_fen: str = chess.STARTING_FEN):
-        """
-        生成包含走法的SVG棋盘
-        
-        Args:
-            uci_moves: UCI格式的走法字符串
-            orientation: 棋盘朝向
-            variant: 变体类型，支持 standard, chess960, kingOfTheHill, threeCheck, 
-                    antichess, atomic, horde, racingKings, crazyhouse, fromPosition
-            start_fen: 起始FEN字符串，仅在variant为"fromPosition"或"chess960"时使用
-        """
-        # 验证variant参数
-        valid_variants = [
-            "standard", "chess960", "kingOfTheHill", "threeCheck", 
-            "antichess", "atomic", "horde", "racingKings", 
-            "crazyhouse", "fromPosition"
-        ]
-        if variant not in valid_variants:
-            raise ValueError(f"不支持的变体类型: {variant}，支持的变体: {valid_variants}")
-        
-        # 根据变体类型创建对应的棋盘
-        if variant == "standard" or variant == "fromPosition":
-            # standard和fromPosition使用标准国际象棋
-            board = chess.Board(start_fen if variant == "fromPosition" else chess.STARTING_FEN)
-        elif variant == "chess960":
-            board = chess.Board(start_fen, chess960=True)
-        elif variant == "kingOfTheHill":
-            board = chess.variant.KingOfTheHillBoard()
-        elif variant == "threeCheck":
-            board = chess.variant.ThreeCheckBoard()
-        elif variant == "antichess":
-            board = chess.variant.AntichessBoard()
-        elif variant == "atomic":
-            board = chess.variant.AtomicBoard()
-        elif variant == "horde":
-            board = chess.variant.HordeBoard()
-        elif variant == "racingKings":
-            board = chess.variant.RacingKingsBoard()
-        elif variant == "crazyhouse":
-            board = chess.variant.CrazyhouseBoard()
-        
-        move_list = uci_moves.strip().split()
-        last_move = None
-        all_moves = []  # 用于存储所有走法
-        
-        for uci in move_list:
-            try:
-                move = chess.Move.from_uci(uci)
-                if move in board.legal_moves:
-                    board.push(move)
-                    last_move = move
-                    all_moves.append(move)
-                else:
-                    print(f"警告: 非法走法 '{uci}'，跳过")
-            except ValueError:
-                print(f"警告: 无效的UCI格式 '{uci}'，跳过")
-        
-        # 检测当前局面是否存在将军
-        is_check = board.is_check()
-        
-        # 获取被将军的国王位置（如果有将军的话）
-        check_square = None
-        if is_check:
-            # 获取当前轮到走棋的一方的国王位置
-            king_color = board.turn
-            king_square = board.king(king_color)
-            if king_square is not None:
-                check_square = king_square
-        
-        # 生成SVG
-        svg = chess.svg.board(
-            board=board,
-            lastmove=last_move,
-            orientation=orientation,
-            check=check_square,  # 标注被将军的国王位置
-        )
-        
-        return svg
-
     def receive_dict(self,value:dict):
         # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
         if value['type'] == 'gameState':
             self.change_state(value)
         elif value['type'] == 'gameFull':
-            self.id.setText(value['id'])
-            self.speed.setText(value['speed'])
-            self.is_rated.setChecked(value['rated'])
-            self.perf.setText(value['perf']['name'])
-            self.create_time.setDateTime(value['createdAt'])
-            self.start_fen.setText(value['initialFen'])
-
             if value['speed'] == 'correspondence':
-                self.basic_time.set_time(timedelta(days=value['daysPerTurn']))
-                self.increment.setValue(0)#通讯棋没有加时这种说法
+                basic_time = timedelta(days=value['daysPerTurn'])
+                increment = 0#通讯棋没有加时这种说法
             else:
                 #毫秒要转成秒，所以这两项都会除以1000
-                self.basic_time.set_time(timedelta(seconds=(value['clock']['initial']) / 1000))
-                self.increment.setValue(int(value['clock']['increment'] / 1000))
+                basic_time = timedelta(seconds=value['clock']['initial'] / 1000)
+                increment = int(value['clock']['increment'] / 1000)
 
-            self.variant_key.setText(value['variant']['key'])
-            self.variant_name.setText(value['variant']['name'])
-            self.variant_short.setText(value['variant']['short'])
-
-            self.white_player.set_value(value['white'])
-            self.black_player.set_value(value['black'])
+            self.scroll_area.load_info(
+                value['id'],
+                value['speed'],
+                value['rated'],
+                value['perf']['name'],
+                value['createdAt'],
+                value['initialFen'],
+                basic_time,
+                increment,
+                value['variant']['key'],
+                value['variant']['name'],
+                value['variant']['short'],
+                value['white'],
+                value['black'],
+            )
 
             self.variant_key_text = value['variant']['key']
             self.start_fen_text = value['initialFen']
@@ -864,17 +728,17 @@ class GameWindow(QMainWindow):
         moves_list = moves_str.split(' ')
 
         if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
-            self.chess_board.load(self.generate_svg_from_uci(
-                moves_str,
+            self.chess_board.load(generate_svg_from_uci(
+                moves_list,
                 self.color,
                 self.variant_key_text,
                 self.start_fen_text
-            ).encode())
-        else:self.chess_board.load(self.generate_svg_from_uci(
-            moves_str,
+            ))
+        else:self.chess_board.load(generate_svg_from_uci(
+            moves_list,
             self.color,
             self.variant_key_text,
-        ).encode())
+        ))
             
         if (self.variant_key_text == 'crazyhouse') and (moves_str != ''):
             board = chess.variant.CrazyhouseBoard()
@@ -963,6 +827,7 @@ class GameWindow(QMainWindow):
 
     def example(self):
         # 真实对局示例1：悔棋、和棋、聊天消息、匿名账号
+        import datetime
         {
             'id': 'f0cEIixZ', 
             'variant': {

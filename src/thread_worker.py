@@ -13,6 +13,7 @@ class GameViewerWorker(QObject):
     def run_event(self):
         for value in self.generator:
             self.send_dict.emit(value)
+        self.thread().quit()
 
 class GeneratorToListWorker(QObject):
     send_list = pyqtSignal(list)
