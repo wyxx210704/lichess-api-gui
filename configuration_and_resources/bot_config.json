@@ -1,0 +1,79 @@
+{
+    "basic_settings":{
+        "engine_name":{
+            "standard":"stockfish18.exe",
+            "variants":"fairy-stockfish.exe"
+        },
+        "game_behavior":{
+            "resign_score":-10,
+            "draw_piece_count":10,
+            "draw_interval":10
+        },
+        "auto_reply_message":{
+            "enabled":false,
+            "api_key":""
+        },
+        "block_list":[],
+        "more_settimgs":{
+            "challenge_no_bot":false,
+            "challenge_only_bot":false,
+            "max_game":5,
+            "auto_match_interval":1
+        }
+    },
+    "challenge_in":{
+        "support_time":{
+            "ultraBullet":false, 
+            "bullet":true, 
+            "blitz":true, 
+            "rapid":true, 
+            "classical":true, 
+            "correspondence":true
+        },
+        "support_variants":{
+            "chess960":true,
+            "kingOfTheHill":true,
+            "threeCheck":true,
+            "antichess":true,
+            "atomic":true,
+            "horde":true,
+            "racingKings":true,
+            "crazyhouse":true,
+            "standard":true
+        },
+        "support_mode":{
+            "casual":true,
+            "rated":true
+        }
+    },
+    "auto_match":{
+        "support_time":[
+            [1 ,0 ],
+            [2 ,1 ],
+            [3 ,0 ],
+            [3 ,2 ],
+            [5 ,0 ],
+            [5 ,3 ],
+            [10,0 ],
+            [10,5 ],
+            [15,10],
+            [30,0 ],
+            [30,20]
+        ],
+        "variants_weight":{
+            "chess960":6,
+            "kingOfTheHill":6,
+            "threeCheck":6,
+            "antichess":6,
+            "atomic":6,
+            "horde":6,
+            "racingKings":6,
+            "crazyhouse":6,
+            "standard":52
+        },
+        "support_mode":{
+            "casual":true,
+            "rated":true
+        }
+    }
+}
