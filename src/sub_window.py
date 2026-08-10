@@ -1,6 +1,6 @@
-from input_dialogs import *
-from business_logic import *
-from tools import *
+from .input_dialogs import *
+from .business_logic import *
+from .tools import *
 
 sub_window_list = []
 thread_list = []

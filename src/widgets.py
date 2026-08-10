@@ -4,12 +4,12 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from json import *
 from datetime import *
-
-from translates import *
-from config_format import FunctionSettings
-from costants import CONFIG
-from chess_general_logic import *
 from berserk.types.common import *
+
+from .translates import *
+from .config_format import FunctionSettings
+from .costants import CONFIG
+from .chess_general_logic import *
 
 class JsonTreeWidget(QTreeWidget):
     def __init__(self, parent:QWidget|None=None):

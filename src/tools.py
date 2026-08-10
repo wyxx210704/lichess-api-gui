@@ -6,10 +6,10 @@ from berserk import *
 from berserk.exceptions import ResponseError
 from datetime import datetime
 
-from widgets import *
-from settings import *
-from thread_worker import *
-from costants import *
+from .widgets import *
+from .settings import *
+from .thread_worker import *
+from .costants import *
 
 class GameViewer(QMainWindow):
     def __init__(self,game_generator:Generator):

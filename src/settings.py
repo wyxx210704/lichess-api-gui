@@ -3,8 +3,8 @@ from PyQt6.QtCore import Qt
 from json import load,dump
 import os
 
-from config_format import ConfigFormat
-from costants import CONFIG
+from .config_format import ConfigFormat
+from .costants import CONFIG
 
 class BaseSettingsWidget(QGroupBox):
     def __init__(self, title:str,parent: QWidget | None = None):

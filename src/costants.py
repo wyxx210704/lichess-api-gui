@@ -1,5 +1,5 @@
 from PyQt6.QtGui import QIcon
-GENERAL_PATH = '../configuration_and_resources/'
+GENERAL_PATH = 'configuration_and_resources/'
 CONFIG = GENERAL_PATH + 'config.json'
 ICON = GENERAL_PATH + 'lichess_icon.ico'
 

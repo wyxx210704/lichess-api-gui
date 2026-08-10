@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import *
 from berserk import Client
 
-from costants import PERFS
-from input_dialog_tools import *
+from .costants import PERFS
+from .input_dialog_tools import *
 
 def get_user_name(client:Client,parent:QWidget|None=None,title:str='输入用户'):
     dialog = GetUserNameDialog(client,parent)

@@ -5,9 +5,9 @@ from typing import Callable
 from PyQt6.QtWidgets import *
 from json import load
 
-from tools import *
-from config_format import ConfigFormat
-from costants import CONFIG
+from .tools import *
+from .config_format import ConfigFormat
+from .costants import CONFIG
 
 def load_config_with_format() -> ConfigFormat:
     return load(open(
