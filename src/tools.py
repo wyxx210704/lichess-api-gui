@@ -9,7 +9,7 @@ from datetime import datetime
 from widgets import *
 from settings import *
 from thread_worker import *
-from costants import ICON,CONFIG
+from costants import *
 
 class GameViewer(QMainWindow):
     def __init__(self,game_generator:Generator):
@@ -166,14 +166,10 @@ class LoginWizard(QWizard):
         self.addPage(self.page_1)
 
         md_display = QTextBrowser(self.page_1)
+        md_display.setOpenLinks(False)
+        md_display.anchorClicked.connect(lambda url: QDesktopServices.openUrl(url))
         QVBoxLayout(self.page_1).addWidget(md_display)
-        md_display.setMarkdown('''
-        1. 先进入[此页面](https://lichess.org/account/oauth/token)，点右上角+按钮，然后就会进入以下页面
-        ![页面内容展示](https://api.keepwork.com/ts-storage/siteFiles/49798/raw#1782219326915image.png)
-        2. 填好令牌（token）描述，只要能让自己记住就行
-        3. 按需要勾选令牌（token）可执行的功能
-        4. 滑到底部，点右下角创建按钮，即可创建
-        ''')
+        md_display.setMarkdown(CREATE_TOKEN_TUTORIAL)
 
     def login_page(self):
         self.page_2 = ControllableWizardPage(self)

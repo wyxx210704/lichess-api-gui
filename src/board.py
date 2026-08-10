@@ -4,7 +4,6 @@ from PyQt6.QtGui import *
 from berserk import Client
 from berserk.types.common import VariantKey
 import chess
-import chess.svg
 import chess.variant
 
 from tools import SettingsWindow
@@ -73,16 +72,14 @@ class BoardMain(QMainWindow):
         }
 
     def add_action(self):
+        
         self.challenge_action = QAction('发起挑战')
-        self.challenge_action.triggered.connect(lambda:self.add_sub_window(ChallengeWindow(self.client)))
+        self.challenge_action.triggered.connect(self.mdi_area.addSubWindow(ChallengeWindow(self.client)).show)
         self.tool_bar.addAction(self.challenge_action)
 
         self.settings_action = QAction('设置')
-        self.settings_action.triggered.connect(lambda:self.add_sub_window(SettingsWindow(self.client)))
+        self.settings_action.triggered.connect(self.mdi_area.addSubWindow(SettingsWindow(self.client)).show)
         self.tool_bar.addAction(self.settings_action)
-
-    def add_sub_window(self,window:QWidget|None=None):
-        self.mdi_area.addSubWindow(window).show()
         
     def page_challenge(self):
         self.challenge_page = QWidget(self.splitter)

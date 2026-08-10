@@ -63,7 +63,7 @@ account_menu.addAction(get_preferences)
 
 get_timeline = QAction('时间线')
 get_timeline.setShortcut('Ctrl+Shift+A, T')
-get_timeline.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(get_my_timeline(client))))
+get_timeline.triggered.connect(lambda:run_function(progress_bar,lambda:tree.set_dict(ExtensionClient.from_berserk(client).more.get_my_timeline())))
 account_menu.addAction(get_timeline)
 
 get_activity_feed = QAction('用户最近活动动态')

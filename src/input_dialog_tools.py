@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import *
 from berserk import Client
-from datetime import datetime,timezone
+from datetime import *
 from typing import get_args
 from berserk.types.common import Color,PerfType
 
@@ -197,10 +197,10 @@ class GetExportGameScreeningDialog(QDialog):
         self.color = QComboBox(self)
         self.analysed = QCheckBox('否',self)
         
-        self.since.setMinimumDateTime(minimum_datetime)
-        self.until.setMinimumDateTime(minimum_datetime)
-        self.since.setMaximumDateTime(datetime.now())
-        self.until.setMaximumDateTime(datetime.now())
+        self.since.setDateTimeRange(minimum_datetime,datetime.now())
+        self.since.setDateTime(datetime.now() - timedelta(weeks=8))
+        self.until.setDateTimeRange(minimum_datetime,datetime.now())
+        self.until.setDateTime(datetime.now())
         self.max_.setRange(1,1000)
         self.rated.clicked.connect(lambda:self.rated.setText('是' if self.rated.isChecked() else '否'))
         self.perf_type.addItems(["bullet", "blitz", "rapid", "classical", "ultraBullet","chess960",
