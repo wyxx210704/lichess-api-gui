@@ -4,7 +4,7 @@ from berserk import Client
 from berserk.types.challenges import ChallengeJson
 
 from .board_tools_thread_worker import *
-from .board_widget import InfoButton
+from ..play_chess_general_widget import InfoButton,ChallengeTreeWidget
 from ..input_dialogs import *
 from ..business_logic import *
 
@@ -128,25 +128,8 @@ class ChallengeWindow(QWidget):
         self.layout_ = QVBoxLayout(self)
         self.setWindowTitle('发出去的挑战')
 
-        self.tree_widget = QTreeWidget(self)
+        self.tree_widget = ChallengeTreeWidget(self)
         self.layout_.addWidget(self.tree_widget)
-        self.tree_widget.setColumnCount(14)
-        self.tree_widget.setHeaderLabels([
-            '编号',
-            '链接',
-            '状态',
-            '挑战者',
-            '被挑战者',
-            '变体',
-            '是否排位',
-            '速度',
-            '时间控制',
-            '颜色',
-            '最终颜色',
-            '种类',
-            '进来还是出去',
-            '初始局面',
-        ])
 
         self.layout_for_buttons = QHBoxLayout()
         self.layout_.addLayout(self.layout_for_buttons)

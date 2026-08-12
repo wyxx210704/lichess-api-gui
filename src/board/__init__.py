@@ -2,18 +2,17 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
-from berserk.types.common import VariantKey
 import chess
 import chess.variant
 
 from ..tools import SettingsWindow
 from ..chess_general_logic import generate_svg_from_uci
 from .board_tools import *
-from .board_widget import *
 from .board_thread_worker import *
 from ..business_logic import *
 from ..input_dialogs import get_item
 from ..costants import ICON
+from ..play_chess_general_widget import *
 
 class BoardMain(QMainWindow):
     def __init__(self,client:Client):
@@ -74,11 +73,11 @@ class BoardMain(QMainWindow):
     def add_action(self):
         
         self.challenge_action = QAction('发起挑战')
-        self.challenge_action.triggered.connect(self.mdi_area.addSubWindow(ChallengeWindow(self.client)).show)
+        self.challenge_action.triggered.connect(lambda:self.mdi_area.addSubWindow(ChallengeWindow(self.client)).show())
         self.tool_bar.addAction(self.challenge_action)
 
         self.settings_action = QAction('设置')
-        self.settings_action.triggered.connect(self.mdi_area.addSubWindow(SettingsWindow(self.client)).show)
+        self.settings_action.triggered.connect(lambda:self.mdi_area.addSubWindow(SettingsWindow(self.client)).show())
         self.tool_bar.addAction(self.settings_action)
         
     def page_challenge(self):
@@ -87,26 +86,8 @@ class BoardMain(QMainWindow):
         self.vertical_layout_in_challenge_page = QVBoxLayout(self.challenge_page)
         self.vertical_layout_in_challenge_page.addWidget(QLabel('收到的挑战'))
 
-        self.tree_widget_for_challenge = QTreeWidget(self.challenge_page)
+        self.tree_widget_for_challenge = ChallengeTreeWidget(self.challenge_page)
         self.vertical_layout_in_challenge_page.addWidget(self.tree_widget_for_challenge)
-
-        self.tree_widget_for_challenge.setColumnCount(14)
-        self.tree_widget_for_challenge.setHeaderLabels([
-            '编号',
-            '链接',
-            '状态',
-            '挑战者',
-            '被挑战者',
-            '变体',
-            '是否排位',
-            '速度',
-            '时间控制',
-            '颜色',
-            '最终颜色',
-            '种类',
-            '进来还是出去',
-            '初始局面',
-        ])
         
         self.horizontal_layout_in_challenge_page = QHBoxLayout()
         self.vertical_layout_in_challenge_page.addLayout(self.horizontal_layout_in_challenge_page)
@@ -157,28 +138,8 @@ class BoardMain(QMainWindow):
         self.vertical_layout_in_game_page = QVBoxLayout(self.game_page)
         self.vertical_layout_in_game_page.addWidget(QLabel('正在进行中的对局'))
 
-        self.tree_widget_for_game = QTreeWidget(self.game_page)
+        self.tree_widget_for_game = GameTreeWidget(self.game_page)
         self.vertical_layout_in_game_page.addWidget(self.tree_widget_for_game)
-
-        self.tree_widget_for_game.setColumnCount(16)
-        self.tree_widget_for_game.setHeaderLabels([
-            '完整编号',
-            '对局编号',
-            'fen局面',
-            '颜色',
-            '上一步棋',
-            '来源',
-            '状态',
-            '变体',
-            '速度',
-            '种类',
-            '是否排位',
-            '是否已走过棋',
-            '对手',
-            '是否到我走棋',
-            '剩余时间（秒）',
-            '等级分',
-        ])
         
         self.horizontal_layout_in_game_page = QHBoxLayout()
         self.vertical_layout_in_game_page.addLayout(self.horizontal_layout_in_game_page)
@@ -430,14 +391,8 @@ class GameWindow(QMainWindow):
         self.info_widget.addWidget(self.scroll_area)
 
     def create_current_clock(self):
-        self.current_clock = QGroupBox('剩余时间',self.info_widget)
+        self.current_clock = CurrentClock(self.info_widget)
         self.info_widget.addWidget(self.current_clock)
-        self.layout_in_current_clock = QFormLayout(self.current_clock)
-
-        self.white_clock = TimedeltaDisplayWidget(self.current_clock)
-        self.black_clock = TimedeltaDisplayWidget(self.current_clock)
-        self.layout_in_current_clock.addRow('白方',self.white_clock)
-        self.layout_in_current_clock.addRow('黑方',self.black_clock)
 
     def create_game_operation(self):
         self.game_operation = QGroupBox('对局操作',self.info_widget)
@@ -472,45 +427,8 @@ class GameWindow(QMainWindow):
         self.horizontal_layout_in_game_operation_2.addWidget(self.defeat_button)
 
     def create_chat_and_record_widget(self):
-        self.chat_and_record_widget = QWidget(self.splitter)
+        self.chat_and_record_widget = ChatAndRecordWidget(self.send_message,self.splitter)
         self.splitter.addWidget(self.chat_and_record_widget)
-        self.vertical_layout_in_chat_and_record_widget = QVBoxLayout(self.chat_and_record_widget)
-
-        self.create_chat_widget()
-        self.create_send_msg_widget()
-        self.create_move_record_widget()
-
-    def create_chat_widget(self):
-        self.vertical_layout_in_chat_and_record_widget.addWidget(QLabel('聊天对话'))
-        self.chat_tree_widget = QTreeWidget(self.chat_and_record_widget)
-        self.vertical_layout_in_chat_and_record_widget.addWidget(self.chat_tree_widget)
-
-        self.chat_tree_widget.setColumnCount(3)
-        self.chat_tree_widget.setHeaderLabels([
-            '房间',
-            '用户',
-            '消息内容',
-        ])
-
-    def create_send_msg_widget(self):
-        self.horizontal_layout_in_chat_and_record_widget = QHBoxLayout()
-        self.vertical_layout_in_chat_and_record_widget.addLayout(self.horizontal_layout_in_chat_and_record_widget)
-
-        self.send_button = QPushButton('发送',self.chat_and_record_widget)
-        self.send_button.clicked.connect(self.send_message)
-
-        self.msg_input = QLineEdit(self.chat_and_record_widget)
-        self.msg_input.returnPressed.connect(self.send_button.click)
-        self.send_to_observation_area = QCheckBox('发送到观战区',self.chat_and_record_widget)
-
-        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.msg_input)
-        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.send_to_observation_area)
-        self.horizontal_layout_in_chat_and_record_widget.addWidget(self.send_button)
-
-    def create_move_record_widget(self):
-        self.vertical_layout_in_chat_and_record_widget.addWidget(QLabel('走棋记录'))
-        self.move_record_widget = QListWidget(self.chat_and_record_widget)
-        self.vertical_layout_in_chat_and_record_widget.addWidget(self.move_record_widget)
 
     def ask_quastion(self,text:str):
         button = QMessageBox.question(
@@ -702,7 +620,7 @@ class GameWindow(QMainWindow):
             self.change_state(value['state'])
         elif value['type'] == 'chatLine':
             item = QTreeWidgetItem(
-                self.chat_tree_widget,
+                self.chat_and_record_widget.get_tree_widget(),
                 [
                     value['room'],
                     value['username'],
@@ -793,14 +711,14 @@ class GameWindow(QMainWindow):
                 else:self.client.board.decline_draw(self.game_id)
 
         if (type(value['wtime']) == timedelta) and (type(value['btime']) == timedelta):
-            self.white_clock.set_time(value['wtime'])
-            self.black_clock.set_time(value['btime'])
+            self.current_clock.set_time(value['wtime'],value['btime'])
         else:
-            self.white_clock.set_time(timedelta(seconds=value['wtime'] / 1000))
-            self.black_clock.set_time(timedelta(seconds=value['btime'] / 1000))
+            self.current_clock.set_time(
+                timedelta(seconds=value['wtime'] / 1000),
+                timedelta(seconds=value['btime'] / 1000),
+            )
         
-        self.move_record_widget.clear()
-        self.move_record_widget.addItems(moves_list)
+        self.chat_and_record_widget.set_moves(moves_list)
 
         if value['status'] != 'started':
             #对局已结束
