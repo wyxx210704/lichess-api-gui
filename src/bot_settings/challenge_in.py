@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import *
 from typing import cast
 
-from base import BaseMultiCheckboxWidget
-from format import (
+from .base import BaseMultiCheckboxWidget
+from .format import (
     SupportTime,
     SupportVariants,
 )

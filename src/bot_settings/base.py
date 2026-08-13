@@ -1,7 +1,9 @@
 from PyQt6.QtWidgets import *
 from typing import *
 
-CONFIG_PATH = '../../configuration_and_resources/bot_config.json'
+from ..costants import GENERAL_PATH
+
+CONFIG_PATH = GENERAL_PATH + 'bot_config.json'
 AUTO_REPLY_MESSAGE_TUTORIAL = '''
 ## 步骤一：注册/登录智谱AI开放平台
 

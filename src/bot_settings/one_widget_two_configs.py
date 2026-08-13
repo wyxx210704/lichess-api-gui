@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from typing import cast
 
-from base import BaseOneWidgetTwoConfigs
-from format import (
+from .base import BaseOneWidgetTwoConfigs
+from .format import (
     GameMode,
     MoreSettings,
     VariantsWeight,

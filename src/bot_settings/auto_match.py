@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import *
 from typing import cast
 
-from base import BaseCRUDWidget
-from format import AlternativeTimeItem
+from .base import BaseCRUDWidget
+from .format import AlternativeTimeItem
 
 class AlternativeTimeEdit(BaseCRUDWidget):
     def __init__(self, config:list[AlternativeTimeItem], parent = None):

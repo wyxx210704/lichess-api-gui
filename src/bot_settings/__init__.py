@@ -3,26 +3,26 @@ from PyQt6.QtGui import QIcon
 from typing import cast
 from json import load,dump
 
-from basic_settings import (
+from .basic_settings import (
     EngineNameEdit,
     GameBehaviorEdit,
     AutoReplyMessageEdit,
     BlockListEdit
 )
 
-from challenge_in import (
+from .challenge_in import (
     SupportTimeEdit,
     SupportVariantsEdit,
 )
 
-from one_widget_two_configs import (
+from .one_widget_two_configs import (
     GameModeEdit,
     MoreSettingsAndVariantsWeightEdit,
 )
 
-from auto_match import AlternativeTimeEdit
-from base import CONFIG_PATH
-from format import ConfigFormat
+from .auto_match import AlternativeTimeEdit
+from .base import CONFIG_PATH
+from .format import ConfigFormat
 
 class BotSettings(QWidget):
     def __init__(self, parent:QWidget|None=None):

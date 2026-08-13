@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
+from requests import get
 import chess
 import chess.variant
 
@@ -31,9 +32,9 @@ class BoardMain(QMainWindow):
         self.setWindowIcon(QIcon(ICON))
         
         self.mdi_area = QMdiArea(self.tab_widget)
-        self.mdi_area.setBackground(QBrush())
-        self.mdi_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.mdi_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        pixmap = QPixmap()
+        pixmap.loadFromData(get('https://picsum.photos/1920/1080').content)
+        self.mdi_area.setBackground(QBrush(pixmap))
         self.tab_widget.addTab(
             self.mdi_area,
             '工具',
@@ -71,7 +72,6 @@ class BoardMain(QMainWindow):
         }
 
     def add_action(self):
-        
         self.challenge_action = QAction('发起挑战')
         self.challenge_action.triggered.connect(lambda:self.mdi_area.addSubWindow(ChallengeWindow(self.client)).show())
         self.tool_bar.addAction(self.challenge_action)
@@ -527,15 +527,13 @@ class GameWindow(QMainWindow):
                     self,
                 )
 
-    def send_message(self):
+    def send_message(self,text:str,is_spectator:bool):
         try:
             self.client.board.post_message(
                 self.game_id,
-                self.msg_input.text(),
-                self.send_to_observation_area.isChecked(),
+                text,
+                is_spectator,
             )
-
-            self.msg_input.clear()
         except ResponseError as error:
             show_api_error_dialog(
                 error,

@@ -2,13 +2,13 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QDesktopServices
 from typing import cast
 
-from base import (
+from .base import (
     BaseBotSettingsWidget,
     BaseCRUDWidget,
     AUTO_REPLY_MESSAGE_TUTORIAL,
 )
 
-from format import (
+from .format import (
     EngineName,
     GameBehavior,
     AutoReplyMessage,

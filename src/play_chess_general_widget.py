@@ -26,9 +26,9 @@ class InfoButton(QPushButton):
         dialog.exec()
 
 class ChatAndRecordWidget(QWidget):
-    def __init__(self, send_message:Callable,parent:QWidget|None = None):
+    def __init__(self, send_message:Callable[[str,bool],None],parent:QWidget|None = None):
         super().__init__(parent)
-        self.send_message = send_message
+        self.send_message = self.send_message_wrapper(send_message)
         self.vertical_layout = QVBoxLayout(self)
         
         self.create_chat_widget()
@@ -50,17 +50,34 @@ class ChatAndRecordWidget(QWidget):
     def create_send_msg_widget(self):
         self.horizontal_layout = QHBoxLayout()
         self.vertical_layout.addLayout(self.horizontal_layout)
-        
-        self.send_button = QPushButton('发送',self)
-        self.send_button.clicked.connect(self.send_message)
-        
+
+        self.send_button = QToolButton(self)
+        self.send_button.setText('发送')
+        self.send_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.msg_input = QLineEdit(self)
-        self.msg_input.returnPressed.connect(self.send_button.click)
-        self.send_to_observation_area = QCheckBox('发送到观战区',self)
+        self.msg_input.returnPressed.connect(self.send_button.showMenu)
         
         self.horizontal_layout.addWidget(self.msg_input)
-        self.horizontal_layout.addWidget(self.send_to_observation_area)
         self.horizontal_layout.addWidget(self.send_button)
+        self.create_send_menu()
+
+    def create_send_menu(self):
+        self.send_menu = QMenu('发送',self.send_button)
+        self.send_button.setMenu(self.send_menu)
+
+        self.send_to_player = QAction('发送到玩家',self.send_menu)
+        self.send_to_player.triggered.connect(lambda:self.send_message(self.msg_input.text(),False))
+        self.send_menu.addAction(self.send_to_player)
+
+        self.send_to_spectator = QAction('发送到观众',self.send_menu)
+        self.send_to_spectator.triggered.connect(lambda:self.send_message(self.msg_input.text(),True))
+        self.send_menu.addAction(self.send_to_spectator)
+
+    def send_message_wrapper(self,send_message:Callable[[str,bool],None]):
+        def wrapper(text:str,is_spectator:bool):
+            send_message(text,is_spectator)
+            self.msg_input.clear()
+        return wrapper
         
     def create_move_record_widget(self):
         self.vertical_layout.addWidget(QLabel('走棋记录'))
