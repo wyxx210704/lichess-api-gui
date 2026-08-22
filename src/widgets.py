@@ -255,7 +255,8 @@ class ControllableWizardPage(QWizardPage):
         return self.state
 
 class ChessBoardWidget(QSplitter):
-    def __init__(self, init_moves:list[str]=[],parent:QWidget|None=None,variant:VariantKey='standard',info_widget:QWidget|None=None,start_fen:str=chess.STARTING_FEN):
+    def __init__(self, init_moves:list[str]=[],parent:QWidget|None=None,variant:VariantKey='standard',
+                 info_widget:QWidget|None=None,start_fen:str=chess.STARTING_FEN):
         super().__init__(Qt.Orientation.Horizontal,parent)
         self.moves = ['起始局面'] + init_moves
         self.orientation_ = chess.WHITE
@@ -559,22 +560,9 @@ class GameInfoWidget(QScrollArea):
         self.layout_in_scroll_area.addWidget(self.white_player)
         self.layout_in_scroll_area.addWidget(self.black_player)
 
-    def load_info(
-            self,
-            id:str,
-            speed:Speed,
-            is_rated:bool,
-            perf:PerfType,
-            create_time:datetime,
-            start_fen:str,
-            basic_time:timedelta,
-            increment:int,
-            variant_key:VariantKey,
-            variant_name:str,
-            variant_short:str,
-            white:dict,
-            black:dict,
-        ):
+    def load_info(self,id:str,speed:Speed,is_rated:bool,perf:PerfType,create_time:datetime,
+                  start_fen:str,basic_time:timedelta,increment:int,variant_key:VariantKey,
+                  variant_name:str,variant_short:str,white:dict,black:dict):
         self.id.setText(id)
         self.speed.setText(speed)
         self.is_rated.setChecked(is_rated)

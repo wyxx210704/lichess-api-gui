@@ -277,3 +277,113 @@ class GetExportGameScreeningDialog(QDialog):
         'players':None,
         'sort':self.sort.currentText(),
     }
+
+class CreateChallengeDialog(QDialog):
+    def __init__(self, parent:QWidget|None = None):
+        super().__init__(parent)
+        self.setWindowTitle('创建挑战')
+        self.layout_ = QFormLayout(self)
+
+        self.normal_time = QRadioButton('普通对局',self)
+        self.normal_time.setChecked(True)
+        self.normal_time.clicked.connect(self.turn_to_normal_time)
+        self.correspondence = QRadioButton('通讯棋',self)
+        self.correspondence.clicked.connect(self.turn_to_correspondence)
+
+        self.layout_.addRow(
+            self.normal_time,
+            self.correspondence,
+        )
+
+        self.clock_limit = QSpinBox(self)
+        self.clock_limit.setRange(0,10800)
+        self.layout_.addRow(
+            '基本时间（秒）',
+            self.clock_limit,
+        )
+
+        self.clock_increment = QSpinBox(self)
+        self.clock_increment.setRange(0,180)
+        self.layout_.addRow(
+            '每步增加时间（秒）',
+            self.clock_increment,
+        )
+
+        self.days = QSpinBox(self)
+        self.days.setRange(1,14)
+        self.days.setEnabled(False)
+        self.layout_.addRow(
+            '天数（仅限通讯棋）',
+            self.days,
+        )
+
+        self.color = QComboBox(self)
+        self.color.addItems([
+            'white',
+            'black',
+            '随机',
+        ])
+
+        self.layout_.addRow(
+            '颜色',
+            self.color,
+        )
+
+        self.variant = QComboBox(self)
+        self.variant.addItems([
+            'standard',
+            'chess960', 
+            'kingOfTheHill', 
+            'threeCheck', 
+            'antichess', 
+            'atomic', 
+            'horde', 
+            'racingKings', 
+            'crazyhouse', 
+            'fromPosition', 
+        ])
+
+        self.layout_.addRow(
+            '变体',
+            self.variant,
+        )
+
+        self.position = QLineEdit(self)
+        self.position.setEnabled(False)
+        self.variant.currentIndexChanged.connect(self.enable_position)
+        self.layout_.addRow(
+            '起始局面',
+            self.position,
+        )
+
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        self.layout_.addRow(self.buttons)
+
+    def turn_to_normal_time(self):
+        self.clock_limit.setEnabled(True)
+        self.clock_increment.setEnabled(True)
+        self.days.setEnabled(False)
+
+    def turn_to_correspondence(self):
+        self.clock_limit.setEnabled(False)
+        self.clock_increment.setEnabled(False)
+        self.days.setEnabled(True)
+
+    def enable_position(self):
+        self.position.setEnabled(self.variant.currentText() == 'fromPosition')
+
+    def get_deta(self):
+        return [
+            self.clock_limit.value() if self.clock_limit.isEnabled() else None,
+            self.clock_increment.value() if self.clock_increment.isEnabled() else None,
+            self.days.value() if self.days.isEnabled() else None,
+            None if self.color.currentText() == '随机' else self.color.currentText(),
+            self.variant.currentText(),
+            self.position.text() if self.position.isEnabled() else None,
+        ]

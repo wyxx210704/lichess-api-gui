@@ -259,9 +259,12 @@ class BoardMain(QMainWindow):
             self.tree_widget_for_game.setItemWidget(item,12,InfoButton(game['opponent'],self.tree_widget_for_game))
 
     def receive_challenge(self,current_challenge:ChallengeJson,type_:ChallengeType):
-        self.open_dialog(f'现在有挑战被{self.challenge_type_text[type_]}，请查收',current_challenge)
+        if current_challenge['timeControl']['type'] == 'unlimited':
+            self.client.challenges.decline(current_challenge['id'],'timeControl')
+        else:
+            self.open_dialog(f'现在有挑战被{self.challenge_type_text[type_]}，请查收',current_challenge)
 
-    def receive_game(self,current_game:GameEventInfo,type_:ChallengeType):
+    def receive_game(self,current_game:GameEventInfo,type_:GameType):
         self.open_dialog(f'现在有对局已经{self.game_type_text[type_]}，请查收',current_game)
 
     def example(self):

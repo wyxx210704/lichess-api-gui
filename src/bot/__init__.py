@@ -1,19 +1,33 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QIcon
-#from berserk import Client
+from berserk import Client
+from berserk.types.bots import GameEventInfo
+from json import load
+from typing import cast
 
 from ..costants import ICON
 from ..play_chess_general_widget import *
+from ..input_dialog_tools import CreateChallengeDialog
+from ..input_dialogs import get_user_name,get_bool
 from .bot_widget import *
+from .bot_thread_worker import *
 from ..bot_settings import BotSettings
+from ..bot_settings.format import ConfigFormat
+from ..bot_settings.base import CONFIG_PATH
 
 class BotMain(QMainWindow):
-    def __init__(self):
+    def __init__(self,client:Client):
         super().__init__()
+        self.client = client
+        self.config = self.get_config()
+
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setMovable(True)
         self.setCentralWidget(self.tab_widget)
+
         self.status_bar = self.statusBar()
+        self.auto_match_info_label = QLabel('暂无自动匹配信息',self.status_bar)
+        self.status_bar.addPermanentWidget(self.auto_match_info_label)
 
         self.setWindowTitle('bot专用下棋主窗口')
         self.setWindowIcon(QIcon(ICON))
@@ -21,6 +35,18 @@ class BotMain(QMainWindow):
         self.create_challenge_and_game_page()
         self.create_game_manager_and_bot_settings()
         self.create_example_game_window()
+        self.start_thread()
+
+    def get_config(self):
+        return cast(
+            ConfigFormat,
+            load(open(
+                CONFIG_PATH,
+                'r',
+                encoding='utf-8',
+                errors='ignore',
+            ))
+        )
 
     def create_challenge_and_game_page(self):
         self.challenge_and_game_page = QWidget(self.tab_widget)
@@ -41,13 +67,163 @@ class BotMain(QMainWindow):
 
     def create_game_manager_and_bot_settings(self):
         self.game_manager = GameManager(self.tab_widget)
-        self.bot_settings = BotSettings(self.tab_widget)
+        self.bot_settings = QScrollArea(self.tab_widget)
+        self.bot_settings.setWidget(BotSettings(self.bot_settings))
         self.tab_widget.addTab(self.game_manager,'对局查看')
         self.tab_widget.addTab(self.bot_settings,'设置')
 
     def create_example_game_window(self):
         self.example_game_window = GameWindow()
         self.game_manager.addSubWindow(self.example_game_window).show()
+
+    def create_tool_bar(self):
+        self.tool_bar = self.addToolBar('工具')
+
+        self.apply_settings_action = QAction('应用最新设置')
+        self.apply_settings_action.triggered.connect(self.apply_settings)
+        self.tool_bar.addAction(self.apply_settings_action)
+
+    def apply_settings(self):
+        if get_bool(self,'是否应用最新设置') and (len(self.client.games.get_ongoing()) != 0):
+            self.config = self.get_config()
+
+    def start_thread(self):
+        self.event_listen_thread = QThread()
+        self.event_listen_worker = EventListen(self.client,self.config)
+        self.event_listen_worker.moveToThread(self.event_listen_thread)
+
+        self.event_listen_worker.challenge_update.connect(self.receive_challenge_in)
+        self.event_listen_worker.ongoing_game_update.connect(self.receive_game)
+        self.event_listen_worker.state_update.connect(self.receive_state)
+
+        self.event_listen_thread.started.connect(self.event_listen_worker.run_event)
+        self.event_listen_thread.finished.connect(self.event_listen_thread.deleteLater)
+        self.event_listen_thread.start()
+
+        self.challenge_out_thread = QThread()
+        self.challenge_out_worker = ChallengeOutTimer(self.client,self.config)
+        self.challenge_out_worker.moveToThread(self.challenge_out_thread)
+        
+        self.challenge_out_worker.current_state.connect(self.auto_match_info_label.setText)
+        self.challenge_out_worker.challenge_out.connect(self.receive_challenge_out)
+        
+        self.challenge_out_thread.started.connect(self.challenge_out_worker.run_event)
+        self.challenge_out_thread.finished.connect(self.challenge_out_thread.deleteLater)
+        self.challenge_out_thread.start()
+
+    def receive_challenge_in(self,challenge:ChallengeJson,state:Literal['challenge','cancel','decline']):
+        final_state = {
+            'challenge':'发起',
+            'cancel':'取消',
+            'decline':'拒绝',
+        }[state]
+
+        match challenge['timeControl']['type']:
+            case 'clock':
+                time_control = challenge['timeControl']['show']
+            case 'correnpondence':
+                time_control = str(challenge['timeControl']['days']) + '天'
+            case _:
+                time_control = '未知'
+
+        self.status_bar.showMessage(
+            f'由{challenge["challenger"]["name"]}到{challenge['destUser']["name"]}的'
+            f'{time_control + challenge["variant"]['name']}'
+            f'{'排位' if challenge["rated"] else '休闲'}挑战已经被{final_state + (
+                f'，拒绝原因：{challenge["declineReason"]}'
+                if state == 'decline' else ''
+            )}',
+            10000,
+        )
+    
+    def receive_game(self,game:GameEventInfo,state:Literal['start','finish']):
+        final_state = {
+            'start':'开始',
+            'finish':'结束',
+        }[state]
+
+        self.status_bar.showMessage(
+            f'与{game["opponent"]["username"]}对弈的{game["variant"]['name']}'
+            f'{'排位' if game["rated"] else '休闲'}对局{game["gameId"]}已经{final_state}',
+            10000,
+        )
+
+    def receive_state(self,challenge_in:list[ChallengeJson],ongoing_game:list[GameEventInfo]):
+        self.challenge_in.clear()
+        self.current_game.clear()
+        
+        for challenge in challenge_in:
+            item = QTreeWidgetItem(self.challenge_in)
+        
+            item.setText(0,challenge['id'])         
+            item.setText(1,challenge['url'])        
+            item.setText(2,challenge['status'])     
+            item.setText(6,'是' if challenge['rated'] else '否')
+            item.setText(7,challenge['speed'])      
+            item.setText(9,challenge['color'])      
+            item.setText(10,challenge['finalColor'])
+            item.setText(12,challenge['direction']) 
+        
+            self.challenge_in.setItemWidget(item,3,InfoButton(challenge['challenger'],self.challenge_in))
+            self.challenge_in.setItemWidget(item,4,InfoButton(challenge['destUser'],self.challenge_in))
+            self.challenge_in.setItemWidget(item,5,InfoButton(challenge['variant'],self.challenge_in))
+            self.challenge_in.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.challenge_in))
+            self.challenge_in.setItemWidget(item,11,InfoButton(challenge['perf'],self.challenge_in))
+        
+            if 'initialFen' in challenge:
+                item.setText(13,challenge['initialFen'])
+        
+        for game in ongoing_game:
+            item = QTreeWidgetItem(self.current_game)
+        
+            item.setText(0,game['fullId'])
+            item.setText(1,game['gameId'])
+            item.setText(2,game['fen'])
+            item.setText(3,game['color'])
+            item.setText(4,game['lastMove'])
+            item.setText(5,game['source'])
+            item.setText(8,game['speed'])
+            item.setText(9,game['perf'])
+            item.setText(10,'是' if game['rated'] else '否')
+            item.setText(11,'是' if game['hasMoved'] else '否')
+            item.setText(13,'是' if game['isMyTurn'] else '否')
+            item.setText(14,str(game['secondsLeft']))#这是整数要转
+            item.setText(15,str(game['perf']))#这是整数要转
+        
+            self.current_game.setItemWidget(item,6,InfoButton(game['status'],self.current_game))
+            self.current_game.setItemWidget(item,7,InfoButton(game['variant'],self.current_game))
+            self.current_game.setItemWidget(item,12,InfoButton(game['opponent'],self.current_game))
+
+    def receive_challenge_out(self,challenge_out:ChallengeJson):
+        self.challenge_out.clear()
+        for challenge in challenge_out:
+            item = QTreeWidgetItem(self.challenge_out)
+        
+            item.setText(0,challenge['id'])         
+            item.setText(1,challenge['url'])        
+            item.setText(2,challenge['status'])     
+            item.setText(6,'是' if challenge['rated'] else '否')
+            item.setText(7,challenge['speed'])      
+            item.setText(9,challenge['color'])      
+            item.setText(10,challenge['finalColor'])
+            item.setText(12,challenge['direction']) 
+        
+            self.challenge_out.setItemWidget(item,3,InfoButton(challenge['challenger'],self.challenge_out))
+            self.challenge_out.setItemWidget(item,4,InfoButton(challenge['destUser'],self.challenge_out))
+            self.challenge_out.setItemWidget(item,5,InfoButton(challenge['variant'],self.challenge_out))
+            self.challenge_out.setItemWidget(item,8,InfoButton(challenge['timeControl'],self.challenge_out))
+            self.challenge_out.setItemWidget(item,11,InfoButton(challenge['perf'],self.challenge_out))
+        
+            if 'initialFen' in challenge:
+                item.setText(13,challenge['initialFen'])
+
+    def closeEvent(self, event:QCloseEvent):
+        if self.challenge_out_thread.isRunning():
+            self.challenge_out_worker.stop()
+            self.challenge_out_thread.quit()
+            self.challenge_out_thread.wait()
+        self.challenge_out_thread.deleteLater()
+        super().closeEvent(event)
 
 class GameWindow(QMainWindow):
     #def __init__(self,client:Client,game_id:str):

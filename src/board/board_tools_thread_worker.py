@@ -15,11 +15,9 @@ class ChallengeListen(QObject):
     def stop(self):self.is_running = False
 
     def run_event(self):
-        while True:
-            if self.is_running:
-                self.challenge_update.emit(self.client.challenges.get_mine())
-                sleep(5)
-            else:break
+        while self.is_running:
+            self.challenge_update.emit(self.client.challenges.get_mine())
+            sleep(5)
 
 class CreateGameWorker(QObject):
     end_event = pyqtSignal()
