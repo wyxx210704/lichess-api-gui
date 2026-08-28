@@ -84,7 +84,8 @@ class EventListen(QObject):
                         self.client.challenges.decline(challenge['id'],'rated')#请向我发起排位挑战
                     else:self.client.challenges.accept(challenge['id'])
 
-    def apply_settings(self):pass
+    def apply_settings(self,config:ConfigFormat):
+        self.config = config
 
 class ChallengeOutTimer(QObject):
     challenge_out = pyqtSignal(list)
@@ -153,4 +154,11 @@ class ChallengeOutTimer(QObject):
                                     f'【{error.__class__.__name__}：{error}】')
         else:self.current_state.emit(f'已成功在{len(online_bots)}个机器人里面选择{bot}发起挑战')
 
-    def apply_settings(self):pass
+    def apply_settings(self,config:ConfigFormat):
+        self.auto_match_config = config['auto_match']
+        self.auto_match_interval = (
+            config
+            ['basic_settings']
+            ['more_settings']
+            ['auto_match_interval']
+        )

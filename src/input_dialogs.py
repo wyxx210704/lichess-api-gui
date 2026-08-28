@@ -35,7 +35,7 @@ def get_item(parent:QWidget|None=None,title:str='选择一个选项',items:list[
         0,
         False
     )
-    QInputDialog.getItem()
+   
     if ok and text:return text
     else:return items[0]
 

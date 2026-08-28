@@ -1,8 +1,7 @@
 from PyQt6.QtWidgets import *
 from berserk import Client
 from datetime import *
-from typing import get_args
-from berserk.types.common import Color,PerfType
+from webbrowser import open as open_web
 
 class GetUserNameDialog(QDialog):
     def __init__(self,client:Client,parent:QWidget|None = None):
@@ -295,6 +294,12 @@ class CreateChallengeDialog(QDialog):
             self.correspondence,
         )
 
+        self.tool_button = QToolButton(self)
+        self.tool_button.setText('便捷工具')
+        self.tool_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.create_tools()
+        self.layout_.addRow(self.tool_button)
+
         self.clock_limit = QSpinBox(self)
         self.clock_limit.setRange(0,10800)
         self.layout_.addRow(
@@ -365,6 +370,33 @@ class CreateChallengeDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         self.layout_.addRow(self.buttons)
 
+    def create_tools(self):
+        self.menu = QMenu('便捷工具',self.tool_button)
+        self.tool_button.setMenu(self.menu)
+        self.action = QWidgetAction(self.menu)
+        self.menu_widget = QWidget()
+        self.action.setDefaultWidget(self.menu_widget)
+        self.menu.addAction(self.action)
+        self.menu_layout = QVBoxLayout(self.menu_widget)
+
+        self.menu_layout.addWidget(QLabel('在以下输入框输入分钟数并按回车键'))
+        self.menu_layout.addWidget(QLabel('那么会自动转成秒并填到初始时间'))
+
+        self.clock_limit_minute = QSpinBox(self.menu_widget)
+        self.clock_limit_minute.setRange(0,180)
+        self.clock_limit_minute.returnPressed.connect(
+            lambda:self.clock_limit.setValue(self.clock_limit_minute.value() * 60))
+        self.menu_layout.addWidget(self.clock_limit_minute)
+        
+        self.horizontal_line = QFrame(self.menu_widget)
+        self.horizontal_line.setFrameShape(QFrame.Shape.HLine)
+        self.menu_layout.addWidget(self.horizontal_line)
+        self.menu_layout.addWidget(QLabel('编辑棋盘请点击以下按钮'))
+
+        self.edit_fen = QPushButton('进入棋盘编辑器',self.menu_widget)
+        self.edit_fen.clicked.connect(lambda:open_web('https://lichess.org/editor',2))
+        self.menu_layout.addWidget(self.edit_fen)
+        
     def turn_to_normal_time(self):
         self.clock_limit.setEnabled(True)
         self.clock_increment.setEnabled(True)

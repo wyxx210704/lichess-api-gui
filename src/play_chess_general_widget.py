@@ -3,27 +3,22 @@ from typing import Callable
 
 from .widgets import *
 
-class InfoButton(QPushButton):
+class InfoButton(QToolButton):
     def __init__(self, info:dict, parent:QWidget|None = None):
-        super().__init__('查看详情', parent)
+        super().__init__(parent)
         self.parent_ = parent
         self.info = info
-        self.clicked.connect(self.create_dialog)
+        self.setText('查看详情')
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-    def create_dialog(self):
-        dialog = QDialog(self.parent_)
-        layout = QVBoxLayout(dialog)
-        dialog.setWindowTitle('详细信息')
-
-        info_widget = JsonTreeWidget(dialog)
-        info_widget.set_dict(self.info)
-        layout.addWidget(info_widget)
-
-        button = QPushButton('完成',dialog)
-        button.clicked.connect(dialog.accept)
-        layout.addWidget(button)
-
-        dialog.exec()
+        self.menu_ = QMenu('详细信息',self)
+        self.setMenu(self.menu_)
+        self.action = QWidgetAction(self.menu_)
+        self.tree = JsonTreeWidget()
+        self.action.setDefaultWidget(self.tree)
+        self.tree.setFixedSize(500,200)
+        self.tree.set_dict(info)
+        self.menu_.addAction(self.action)
 
 class ChatAndRecordWidget(QWidget):
     def __init__(self, send_message:Callable[[str,bool],None],parent:QWidget|None = None):

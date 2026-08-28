@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import *
 from berserk import Client
-from requests import get
 import chess
 import chess.variant
 
@@ -14,6 +13,7 @@ from ..business_logic import *
 from ..input_dialogs import get_item
 from ..costants import ICON
 from ..play_chess_general_widget import *
+from ..app_basic import apply_style
 
 class BoardMain(QMainWindow):
     def __init__(self,client:Client):
@@ -32,9 +32,7 @@ class BoardMain(QMainWindow):
         self.setWindowIcon(QIcon(ICON))
         
         self.mdi_area = QMdiArea(self.tab_widget)
-        pixmap = QPixmap()
-        pixmap.loadFromData(get('https://picsum.photos/1920/1080').content)
-        self.mdi_area.setBackground(QBrush(pixmap))
+        self.mdi_area.setBackground(QBrush())
         self.tab_widget.addTab(
             self.mdi_area,
             '工具',
@@ -350,6 +348,7 @@ class GameWindow(QMainWindow):
     def __init__(self,client:Client,game_id:str):
         super().__init__()
         self.status_bar = self.statusBar()
+        apply_style(self)
         self.info_label = QLabel(self.status_bar)
         self.status_bar.addWidget(self.info_label)
         self.splitter = QSplitter(Qt.Orientation.Horizontal,self)

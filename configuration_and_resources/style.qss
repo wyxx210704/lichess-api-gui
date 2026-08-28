@@ -1,0 +1,5 @@
+QAbstractItemView {background: transparent;}
+QTabWidget {background: transparent;}
+QScrollArea {background: transparent;}
+QSplitter::handle {background: transparent;}
+QToolBar { border: 0px; }

@@ -10,6 +10,7 @@ from .widgets import *
 from .settings import *
 from .thread_worker import *
 from .costants import *
+from .app_basic import apply_style
 
 class GameViewer(QMainWindow):
     def __init__(self,game_generator:Generator):
@@ -28,6 +29,7 @@ class GameViewer(QMainWindow):
 
         self.setWindowTitle('观看对局')
         self.setWindowIcon(QIcon(ICON))
+        apply_style(self)
         self.setCentralWidget(self.chess_board)
         self.info_widget.load_info(
             first_deta['id'],
@@ -313,6 +315,7 @@ class SettingsWindow(QMainWindow):
         self.setMinimumWidth(375)
         self.setWindowTitle('设置')
         self.setWindowIcon(QIcon(ICON))
+        apply_style(self)
 
         self.layout_.addWidget(TokenManager(self.widget_in_scroll_area))
         self.layout_.addWidget(AutoLoginControl(self.widget_in_scroll_area))

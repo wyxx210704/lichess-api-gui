@@ -7,6 +7,7 @@ from typing import cast
 
 from ..costants import ICON
 from ..play_chess_general_widget import *
+from ..business_logic import *
 from ..input_dialog_tools import CreateChallengeDialog
 from ..input_dialogs import get_user_name,get_bool
 from .bot_widget import *
@@ -20,6 +21,7 @@ class BotMain(QMainWindow):
         super().__init__()
         self.client = client
         self.config = self.get_config()
+        self.sub_windows = []
 
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setMovable(True)
@@ -35,6 +37,7 @@ class BotMain(QMainWindow):
         self.create_challenge_and_game_page()
         self.create_game_manager_and_bot_settings()
         self.create_example_game_window()
+        self.create_tool_bar()
         self.start_thread()
 
     def get_config(self):
@@ -83,9 +86,56 @@ class BotMain(QMainWindow):
         self.apply_settings_action.triggered.connect(self.apply_settings)
         self.tool_bar.addAction(self.apply_settings_action)
 
+        self.create_custom_challenge_action = QAction('发起自定义挑战')
+        self.create_custom_challenge_action.triggered.connect(self.create_custom_challenge)
+        self.tool_bar.addAction(self.create_custom_challenge_action)
+
+        self.general_settings_action = QAction('打开通用设置')
+        self.general_settings_action.triggered.connect(self.create_settings_window)
+        self.tool_bar.addAction(self.general_settings_action)
+
     def apply_settings(self):
-        if get_bool(self,'是否应用最新设置') and (len(self.client.games.get_ongoing()) != 0):
+        if get_bool(self,'是否应用最新设置（正在进行的对局不会应用设置）'):
+            QMessageBox.information(
+                self,
+                '提示',
+                '操作成功',
+            )
+
             self.config = self.get_config()
+            self.event_listen_worker.apply_settings(self.config)
+            self.challenge_out_worker.apply_settings(self.config)
+
+    def create_custom_challenge(self):
+        user_name = get_user_name(self.client,self,'输入被挑战的用户')
+        is_rated = get_bool(self,'是否排位')
+        dialog = CreateChallengeDialog(self)
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                self.client.challenges.create(
+                    user_name,
+                    is_rated,
+                    *dialog.get_deta(),
+                ) 
+            except ResponseError as error:
+                show_api_error_dialog(
+                    error,
+                    '创建挑战时报错',
+                    self,
+                )
+            except Exception as error:
+                show_error_dialog(
+                    *get_error_details(error),
+                    '创建挑战时报错',
+                    self,
+                )
+
+    def create_settings_window(self):
+        window = SettingsWindow(self.client)
+        self.sub_windows.append(window)
+        window.destroyed.connect(lambda:self.sub_windows.remove(window))
+        window.show()
 
     def start_thread(self):
         self.event_listen_thread = QThread()
@@ -128,7 +178,7 @@ class BotMain(QMainWindow):
 
         self.status_bar.showMessage(
             f'由{challenge["challenger"]["name"]}到{challenge['destUser']["name"]}的'
-            f'{time_control + challenge["variant"]['name']}'
+            f'{time_control + challenge["perf"]["name"]}'
             f'{'排位' if challenge["rated"] else '休闲'}挑战已经被{final_state + (
                 f'，拒绝原因：{challenge["declineReason"]}'
                 if state == 'decline' else ''
@@ -143,7 +193,7 @@ class BotMain(QMainWindow):
         }[state]
 
         self.status_bar.showMessage(
-            f'与{game["opponent"]["username"]}对弈的{game["variant"]['name']}'
+            f'与{game["opponent"]["username"]}对弈的{game["perf"]}'
             f'{'排位' if game["rated"] else '休闲'}对局{game["gameId"]}已经{final_state}',
             10000,
         )
