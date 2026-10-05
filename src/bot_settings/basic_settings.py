@@ -45,7 +45,8 @@ class EngineNameEdit(BaseBotSettingsWidget):
 
 class GameBehaviorEdit(BaseBotSettingsWidget):
     def __init__(self, config:GameBehavior, parent:QWidget|None = None):
-        super().__init__('对局行为控制', '控制对局时的行为（和棋必备硬性条件：评估分=0）', parent)
+        super().__init__('对局行为控制', '控制对局时的行为（由于功能原因暂时停止使用）', parent)
+        self.setEnabled(False)
         self.layout_ = QFormLayout(self)
         self.layout_.addRow(self.get_description())
 

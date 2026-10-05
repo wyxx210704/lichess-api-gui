@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import *
 from typing import Callable
 
-from .widgets import *
+from ..widgets import *
 
 class InfoButton(QToolButton):
     def __init__(self, info:dict, parent:QWidget|None = None):

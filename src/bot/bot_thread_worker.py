@@ -4,8 +4,13 @@ from berserk.types.challenges import ChallengeJson
 from berserk.exceptions import ResponseError
 from time import sleep
 from random import choice
+from chess import Color
+from typing import cast,Generator
 
-from ..bot_settings.format import ConfigFormat
+from ..bot_settings.format import ConfigFormat,BasicSettings
+from ..play_chess_general.game_formats import GameStste,EventInGame
+from .bot_core import AutoReplyMessage,ChessAnalysis
+from ..custom_api import ExtensionClient
 
 class EventListen(QObject):
     ongoing_game_update = pyqtSignal(
@@ -60,10 +65,10 @@ class EventListen(QObject):
     def check_challenge(self,challenge:ChallengeJson):
         if challenge['challenger']['name'] != self.my_name:#是进来的挑战
             if self.config['basic_settings']['more_settings']['challenge_no_bot'] and \
-            (challenge['challenger']['title'] == 'BOT'):
+            (('title' in challenge['challenger']) and (challenge['challenger']['title'] == 'BOT')):
                 self.client.challenges.decline(challenge['id'],'noBot')#我不接受来自机器人的挑战
             elif self.config['basic_settings']['more_settings']['challenge_only_bot'] and \
-            (challenge['challenger']['title'] != 'BOT'):
+            (not (('title' in challenge['challenger']) and (challenge['challenger']['title'] == 'BOT'))):
                 self.client.challenges.decline(challenge['id'],'onlyBot')#我只接受来自机器人的挑战
             elif challenge['challenger']['name'] in self.config['basic_settings']['block_list']:
                 self.client.challenges.decline(challenge['id'],'generic')#我目前不接受挑战
@@ -72,7 +77,8 @@ class EventListen(QObject):
             elif ((challenge['timeControl']['type'] == 'unlimited') or #因为这里暂时不支持无限时间对局
             (not self.config['challenge_in']['support_time'][challenge['speed']])):
                 self.client.challenges.decline(challenge['id'],'timeControl')#我不接受此时限设置的挑战
-            elif not self.config['challenge_in']['support_variants'][challenge['variant']['key']]:
+            elif not self.config['challenge_in']['support_variants']['standard' if 
+            challenge['variant']['key'] == 'fromPosition' else challenge['variant']['key']]:
                 self.client.challenges.decline(challenge['id'],'variant')#我现在不愿意下这个变体
             else:
                 if challenge['rated']:
@@ -112,7 +118,7 @@ class ChallengeOutTimer(QObject):
             self.count += 1
 
             #因为这里传进去分钟，所以需要乘60转换成秒
-            if (self.count % (self.auto_match_interval * 60)) == 0:
+            if ((self.count % (self.auto_match_interval * 60)) == 0):
                 self.create_an_auto_match()
 
             if (self.count % 5) == 0:
@@ -134,8 +140,7 @@ class ChallengeOutTimer(QObject):
                 bot,
                 choice(
                     [False] if self.auto_match_config['enable_mode']['casual'] else []
-                    +
-                    [True] if self.auto_match_config['enable_mode']['rated'] else []
+                    + [True] if self.auto_match_config['enable_mode']['rated'] else []
                 ),
                 choice(self.auto_match_config['alternative_time'])['limit'] * 60,#分钟要转换成秒
                 choice(self.auto_match_config['alternative_time'])['increment'],
@@ -162,3 +167,141 @@ class ChallengeOutTimer(QObject):
             ['more_settings']
             ['auto_match_interval']
         )
+
+class PlayChessStream(QObject):
+    send_dict = pyqtSignal(dict)
+    state_changed = pyqtSignal(str)
+    engine_info_changed = pyqtSignal(dict)
+
+    def __init__(self,client:Client,game_id:str,color:Color,config:BasicSettings):
+        super().__init__()
+        self.client = ExtensionClient.from_berserk(client)
+        self.game_id = game_id
+        self.color = color
+        self.config = config
+
+    def run_event(self):
+        for value in cast(Generator[EventInGame],
+        self.client.bots.stream_game_state(self.game_id)):
+            self.send_dict.emit(value)
+
+            match value['type']:
+                case 'gameFull':
+                    match value['variant']['key']:
+                        case 'chess960' | 'fromPosition':
+                            self.analyzer = ChessAnalysis(
+                                self.config['engine_name'],
+                                value['variant']['key'],
+                                self.client,
+                                value['initialFen'],
+                            )
+                        case 'standard':
+                            self.analyzer = ChessAnalysis(
+                                self.config['engine_name'],
+                                value['variant']['key'],
+                                self.client,
+                            )
+                        case _:
+                            self.analyzer = ChessAnalysis(
+                                self.config['engine_name'],
+                                value['variant']['key'],
+                                self.client,
+                            )
+
+                    if self.config['auto_reply_message']['enabled']:
+                        self.auto_reply_message_ai = AutoReplyMessage(
+                            self.config['auto_reply_message']['api_key'],
+                            self.client.account.get()['username'],
+                        )
+
+                    self.client.bots.post_message(
+                        self.game_id,
+                        '欢迎和我下棋，下棋期间可以随时和我聊天' + \
+                        ('，有ai实时接管聊天区' if self.config['auto_reply_message']['enabled'] else ''),
+                        False,
+                    )
+
+                    self.client.bots.post_message(
+                        self.game_id,
+                        '欢迎来这里观战我的棋局，观战过程可以随时和我聊天' + \
+                        ('，有ai实时接管聊天区' if self.config['auto_reply_message']['enabled'] else ''),
+                        False,
+                    )
+
+                    self.receive_state(value['state'])
+                case 'gameState':
+                    self.receive_state(value)
+                case 'chatLine' if self.config['auto_reply_message']['enabled'] \
+                and ((value['username'] != 'lichess') and (value['username'] != \
+                self.client.account.get()['username'])):#因为系统提示和自己不算
+                    result = self.auto_reply_message_ai.make_a_chat(
+                        value['room'],
+                        value['text'],
+                        value['username'],
+                    )
+
+                    if result['state'] == 'ok':
+                        try:self.client.bots.post_message(
+                                self.game_id,
+                                result['text'],
+                                (value['room'] == 'spectator'),#这直接就是个布尔值
+                                #如果是观众来的那就发起观众那边
+                            )
+                        except Exception as error:
+                            ok = False
+                            error_reason = str(error)
+                            error_type = error.__class__.__name__
+                        else:
+                            ok = True
+                            text = result['text']
+                    else:
+                        ok = False
+                        error_reason = result['text']#如果发生错误的时候那就是错误的文字
+                        error_type = result['exception_type']
+
+                    if ok:self.state_changed.emit(f'发送消息成功：{text}')
+                    else:self.state_changed.emit(f'发送消息报错【{error_type}】：{error_reason}')
+                case 'opponentGone' if value['gone'] and (value['claimWinInSeconds'] <= 0):
+                    try:self.client.extension_bot.claim_victory(self.game_id)
+                    except Exception as error:self.state_changed.emit(f'获得胜利报错【{error.__class__.__name__}】：{error}')
+                    else:self.state_changed.emit('成功在此对局取得胜利')
+
+    def receive_state(self,state:GameStste):
+        moves_str:str = state['moves']
+        moves_list = moves_str.split(' ')
+
+        if state['status'] == 'started':
+            match self.color:
+                case True:#chess.WHITE
+                    if ('btakeback' in state) and (state['btakeback'] == True):
+                        self.client.extension_bot.accept_takeback(self.game_id)
+                    elif (len(moves_list) % 2 == 0) or (moves_str == ''):#轮到白方走棋
+                        result = self.analyzer.play_and_analysis(
+                            state,
+                            (('bdraw' in state) and (state['bdraw'] == True)),
+                        )
+
+                        try:
+                            self.client.bots.make_move(self.game_id,result['move'])
+                            self.engine_info_changed.emit(result['info'])
+                            self.client.extension_bot.handle_draw(self.game_id,result['offer_draw'])#如果是false那么啥事也不发生
+                            if result['resigned']:self.client.bots.resign_game(self.game_id)
+                        except Exception as error:self.state_changed.emit(f'执行操作报错【{error.__class__.__name__}】：{error}')
+                case False:#chess.BLACK
+                    if ('wtakeback' in state) and (state['wtakeback'] == True):
+                        self.client.extension_bot.accept_takeback(self.game_id)
+                    elif len(moves_list) % 2 == 1 and (moves_str != ''):#轮到黑方走棋
+                        result = self.analyzer.play_and_analysis(
+                            state,
+                            (('wdraw' in state) and (state['wdraw'] == True)),
+                        )
+
+                        try:
+                            self.client.bots.make_move(self.game_id,result['move'])
+                            self.engine_info_changed.emit(result['info'])
+                            self.client.extension_bot.handle_draw(self.game_id,result['offer_draw'])#如果是false那么啥事也不发生
+                            if result['resigned']:self.client.bots.resign_game(self.game_id)
+                        except Exception as error:self.state_changed.emit(f'执行操作报错【{error.__class__.__name__}】：{error}')
+        else:
+            self.state_changed.emit(f'对局以{state["status"]}结束')
+            self.analyzer.close_engine()

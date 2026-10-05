@@ -4,7 +4,7 @@ from berserk import Client
 from berserk.types.challenges import ChallengeJson
 
 from .board_tools_thread_worker import *
-from ..play_chess_general_widget import InfoButton,ChallengeTreeWidget
+from ..play_chess_general.widgets import InfoButton,ChallengeTreeWidget
 from ..input_dialogs import *
 from ..business_logic import *
 from ..input_dialog_tools import CreateChallengeDialog

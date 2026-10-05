@@ -6,7 +6,7 @@ from json import load
 from typing import cast
 
 from ..costants import ICON
-from ..play_chess_general_widget import *
+from ..play_chess_general.widgets import *
 from ..business_logic import *
 from ..input_dialog_tools import CreateChallengeDialog
 from ..input_dialogs import get_user_name,get_bool
@@ -19,26 +19,45 @@ from ..bot_settings.base import CONFIG_PATH
 class BotMain(QMainWindow):
     def __init__(self,client:Client):
         super().__init__()
-        self.client = client
-        self.config = self.get_config()
-        self.sub_windows = []
+        stdbtn = QMessageBox.StandardButton
+        result = QMessageBox.question(
+            self,
+            '功能已弃用',
+            '\n'.join([
+                '由于现在还存在一些无法修复的bug，',
+                '此功能暂时弃用，',
+                '可能很久以后才会进行修复，',
+                '请选择下一步操作：'
+            ]),
+            stdbtn.Close |
+            stdbtn.Ignore,
+            stdbtn.Close,
+        )
 
-        self.tab_widget = QTabWidget(self)
-        self.tab_widget.setMovable(True)
-        self.setCentralWidget(self.tab_widget)
+        if result == stdbtn.Close:
+            self.deleteLater()
+        elif result == stdbtn.Ignore:
+            self.client = client
+            self.config = self.get_config()
+            self.sub_windows = []
 
-        self.status_bar = self.statusBar()
-        self.auto_match_info_label = QLabel('暂无自动匹配信息',self.status_bar)
-        self.status_bar.addPermanentWidget(self.auto_match_info_label)
+            self.tab_widget = QTabWidget(self)
+            self.tab_widget.setMovable(True)
+            self.setCentralWidget(self.tab_widget)
 
-        self.setWindowTitle('bot专用下棋主窗口')
-        self.setWindowIcon(QIcon(ICON))
+            self.status_bar = self.statusBar()
+            self.auto_match_info_label = QLabel('暂无自动匹配信息',self.status_bar)
+            self.status_bar.addPermanentWidget(self.auto_match_info_label)
 
-        self.create_challenge_and_game_page()
-        self.create_game_manager_and_bot_settings()
-        self.create_example_game_window()
-        self.create_tool_bar()
-        self.start_thread()
+            self.setWindowTitle('bot专用下棋主窗口')
+            self.setWindowIcon(QIcon(ICON))
+
+            self.create_challenge_and_game_page()
+            self.create_game_manager_and_bot_settings()
+            self.create_tool_bar()
+            self.start_thread()
+
+            self.game_windows = cast(dict[str,QMdiSubWindow],{})
 
     def get_config(self):
         return cast(
@@ -74,10 +93,6 @@ class BotMain(QMainWindow):
         self.bot_settings.setWidget(BotSettings(self.bot_settings))
         self.tab_widget.addTab(self.game_manager,'对局查看')
         self.tab_widget.addTab(self.bot_settings,'设置')
-
-    def create_example_game_window(self):
-        self.example_game_window = GameWindow()
-        self.game_manager.addSubWindow(self.example_game_window).show()
 
     def create_tool_bar(self):
         self.tool_bar = self.addToolBar('工具')
@@ -198,6 +213,18 @@ class BotMain(QMainWindow):
             10000,
         )
 
+        if state == 'start':
+            game_window = self.game_manager.addSubWindow(GameWindow(
+                self.client,
+                game['gameId'],
+                self.config['basic_settings'],
+            ))
+
+            self.game_windows[game['gameId']] = game_window
+            game_window.show()
+        elif state == 'finish':
+            QTimer.singleShot(15000,self.game_windows[game['gameId']].close)
+
     def receive_state(self,challenge_in:list[ChallengeJson],ongoing_game:list[GameEventInfo]):
         self.challenge_in.clear()
         self.current_game.clear()
@@ -268,16 +295,17 @@ class BotMain(QMainWindow):
                 item.setText(13,challenge['initialFen'])
 
     def closeEvent(self, event:QCloseEvent):
-        if self.challenge_out_thread.isRunning():
-            self.challenge_out_worker.stop()
-            self.challenge_out_thread.quit()
-            self.challenge_out_thread.wait()
-        self.challenge_out_thread.deleteLater()
+        try:
+            if self.challenge_out_thread.isRunning():
+                self.challenge_out_worker.stop()
+                self.challenge_out_thread.quit()
+                self.challenge_out_thread.wait()
+            self.challenge_out_thread.deleteLater()
+        except AttributeError:pass
         super().closeEvent(event)
 
 class GameWindow(QMainWindow):
-    #def __init__(self,client:Client,game_id:str):
-    def __init__(self):
+    def __init__(self,client:Client,game_id:str,config:BasicSettings):
         super().__init__()
         self.status_bar = self.statusBar()
         self.info_label = QLabel(self.status_bar)
@@ -290,16 +318,13 @@ class GameWindow(QMainWindow):
             630,
         )
 
-        '''
         self.client = client
         self.game_id = game_id
+        self.config = config
         
         self.setWindowTitle(f'下棋窗口，对局{self.game_id}')
-        '''
-        self.setWindowTitle('示例对局')
         self.setWindowIcon(QIcon(ICON))
 
-        '''
         for game in self.client.games.get_ongoing():
             if game['gameId'] == self.game_id:#判断是不是这一局
                 if game['color'] == 'white':
@@ -308,13 +333,12 @@ class GameWindow(QMainWindow):
                     self.color = chess.BLACK
 
                 break#防止多余的循环出现
-        '''
 
         self.chess_board = NoStretchingSvgWidget(self.splitter)
         self.splitter.addWidget(self.chess_board)
         self.create_info_widget()
         self.create_chat_and_record_widget()
-        #self.start_thread()
+        self.start_thread()
         self.chess_board.load(generate_svg_from_board(chess.Board(),chess.WHITE))
 
     def create_info_widget(self):
@@ -339,5 +363,145 @@ class GameWindow(QMainWindow):
         self.info_widget.addWidget(self.engine_info)
 
     def create_chat_and_record_widget(self):
-        self.chat_and_record_widget = ChatAndRecordWidget(lambda text,is_spectator:None,self.splitter)
+        self.chat_and_record_widget = ChatAndRecordWidget(self.send_message,self.splitter)
         self.splitter.addWidget(self.chat_and_record_widget)
+
+    def send_message(self,text:str,is_spectator:bool):
+        try:
+            self.client.board.post_message(
+                self.game_id,
+                text,
+                is_spectator,
+            )
+        except ResponseError as error:
+            show_api_error_dialog(
+                error,
+                '发送消息时发生错误',
+                self,
+            )
+        except Exception as error:
+            show_error_dialog(
+                *get_error_details(error),
+                '发送消息时发生错误',
+                self,
+            )
+
+    def start_thread(self):
+        self.worker_thread = QThread()
+        self.worker = PlayChessStream(self.client,self.game_id,self.color,self.config)
+        self.worker.moveToThread(self.worker_thread)
+
+        self.worker.send_dict.connect(self.receive_dict)
+        self.worker.engine_info_changed.connect(self.engine_info.set_dict)
+        self.worker.state_changed.connect(self.status_bar.showMessage)
+
+        self.worker_thread.started.connect(self.worker.run_event)
+        self.worker_thread.finished.connect(self.worker_thread.deleteLater)
+        self.worker_thread.start()
+
+    def receive_dict(self,value:EventInGame):
+        # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
+        if value['type'] == 'gameState':
+            self.change_state(value)
+        elif value['type'] == 'gameFull':
+            if value['speed'] == 'correspondence':
+                basic_time = timedelta(days=value['daysPerTurn'])
+                increment = 0#通讯棋没有加时这种说法
+            else:
+                #毫秒要转成秒，所以这两项都会除以1000
+                basic_time = timedelta(seconds=value['clock']['initial'] / 1000)
+                increment = int(value['clock']['increment'] / 1000)
+
+            self.scroll_area.load_info(
+                value['id'],
+                value['speed'],
+                value['rated'],
+                value['perf']['name'],
+                value['createdAt'],
+                value['initialFen'],
+                basic_time,
+                increment,
+                value['variant']['key'],
+                value['variant']['name'],
+                value['variant']['short'],
+                value['white'],
+                value['black'],
+            )
+
+            self.variant_key_text = value['variant']['key']
+            self.start_fen_text = value['initialFen']
+
+            if self.variant_key_text == 'chess960':
+                board = chess.Board(self.start_fen_text)
+                start_pos = board.chess960_pos(ignore_counters=False)
+                if start_pos == None:
+                    self.status_bar.showMessage(
+                        '暂未找到chess960编号',
+                        5000,
+                    )
+                else:self.info_label.setText(f'这局使用的chess960起始局面编号是{start_pos}')
+
+            self.change_state(value['state'])
+        elif value['type'] == 'chatLine':
+            item = QTreeWidgetItem(
+                self.chat_and_record_widget.get_tree_widget(),
+                [
+                    value['room'],
+                    value['username'],
+                    value['text'],
+                ]
+            )
+        elif (value['type'] == 'opponentGone') and (value['gone'] == True):
+            self.status_bar.showMessage(
+                f'对手已离开对局，{value['claimWinInSeconds']}秒后可以取得胜利',
+                5000,
+            )
+
+    def change_state(self,value:GameStste):
+        #对局进行中
+        moves_str:str = value['moves']
+        moves_list = moves_str.split(' ')
+
+        if (self.variant_key_text == 'chess960') or (self.variant_key_text == 'fromPosition'):
+            self.chess_board.load(generate_svg_from_uci(
+                moves_list,
+                self.color,
+                self.variant_key_text,
+                self.start_fen_text
+            ))
+        else:self.chess_board.load(generate_svg_from_uci(
+            moves_list,
+            self.color,
+            self.variant_key_text,
+        ))
+
+        if (self.variant_key_text == 'crazyhouse') and (moves_str != ''):
+            board = chess.variant.CrazyhouseBoard()
+            for move_uci in moves_list:
+                board.push(chess.Move.from_uci(move_uci))
+            self.info_label.setText(f'我的棋子：{str(board.pockets[self.color])}')
+
+        if (type(value['wtime']) == timedelta) and (type(value['btime']) == timedelta):
+            self.current_clock.set_time(value['wtime'],value['btime'])
+        else:
+            self.current_clock.set_time(
+                timedelta(seconds=value['wtime'] / 1000),
+                timedelta(seconds=value['btime'] / 1000),
+            )
+
+        self.chat_and_record_widget.set_moves(moves_list)
+
+        if value['status'] != 'started':
+            #对局已结束
+            QMessageBox.information(
+                self,
+                '对局结束',
+                f'结束原因：{value["status"]}'
+            )
+
+            if 'winner' in value:
+                QMessageBox.information(
+                    self,
+                    '对局结束',
+                    f'胜利者：{value['winner']}'
+                )

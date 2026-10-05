@@ -12,8 +12,9 @@ from .board_thread_worker import *
 from ..business_logic import *
 from ..input_dialogs import get_item
 from ..costants import ICON
-from ..play_chess_general_widget import *
+from ..play_chess_general.widgets import *
 from ..app_basic import apply_style
+from ..play_chess_general.game_formats import EventInGame,GameStste
 
 class BoardMain(QMainWindow):
     def __init__(self,client:Client):
@@ -559,7 +560,7 @@ class GameWindow(QMainWindow):
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
         self.worker_thread.start()
 
-    def receive_dict(self,value:dict):
+    def receive_dict(self,value:EventInGame):
         # 这里由于有判断逻辑，所以请大家使用下方的example函数进行查看，证明为什么要这样子设计
         if value['type'] == 'gameState':
             self.change_state(value)
@@ -637,7 +638,7 @@ class GameWindow(QMainWindow):
                 if self.ask_quastion('对方离开对局时间已达上限，是否直接取得胜利'):
                     self.client.board.claim_victory(self.game_id)
 
-    def change_state(self,value:dict):
+    def change_state(self,value:GameStste):
         #对局进行中
         moves_str:str = value['moves']
         moves_list = moves_str.split(' ')
