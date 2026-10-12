@@ -502,6 +502,8 @@ class GameInfoWidget(QScrollArea):
         self.setWidgetResizable(True)
         
         self.scroll_area_widget = QWidget(self)
+        self.scroll_area_widget.setObjectName('info_widget')
+        self.scroll_area_widget.setStyleSheet('#info_widget {background: transparent;}')
         self.setWidget(self.scroll_area_widget)
         self.layout_in_scroll_area = QVBoxLayout(self.scroll_area_widget)
     

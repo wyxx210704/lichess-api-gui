@@ -1,11 +1,19 @@
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QIcon
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimediaWidgets import QVideoWidget
 from berserk import Client
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QUrl
+
+'''
 from berserk.types.bots import GameEventInfo
 from json import load
 from typing import cast
+'''
 
-from ..costants import ICON
+from ..costants import ICON,GENERAL_PATH
+
+'''
 from ..play_chess_general.widgets import *
 from ..business_logic import *
 from ..input_dialog_tools import CreateChallengeDialog
@@ -15,50 +23,63 @@ from .bot_thread_worker import *
 from ..bot_settings import BotSettings
 from ..bot_settings.format import ConfigFormat
 from ..bot_settings.base import CONFIG_PATH
+'''
 
 class BotMain(QMainWindow):
     def __init__(self,client:Client):
         super().__init__()
-        stdbtn = QMessageBox.StandardButton
-        result = QMessageBox.question(
+        self.setWindowTitle('你被骗了')
+        self.setWindowIcon(QIcon(ICON))
+        self.resize(800,600)
+
+        '''
+        #暂时不确定搞不搞这个对话框
+        QMessageBox.information(
             self,
             '功能已弃用',
-            '\n'.join([
-                '由于现在还存在一些无法修复的bug，',
-                '此功能暂时弃用，',
-                '可能很久以后才会进行修复，',
-                '请选择下一步操作：'
-            ]),
-            stdbtn.Close |
-            stdbtn.Ignore,
-            stdbtn.Close,
+            '由于此功能现存很多bug，所以打算暂时弃用'
         )
+        '''
 
-        if result == stdbtn.Close:
-            self.deleteLater()
-        elif result == stdbtn.Ignore:
-            self.client = client
-            self.config = self.get_config()
-            self.sub_windows = []
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
 
-            self.tab_widget = QTabWidget(self)
-            self.tab_widget.setMovable(True)
-            self.setCentralWidget(self.tab_widget)
+        self.video_widget = QVideoWidget(self)
+        self.setCentralWidget(self.video_widget)
+        self.player.setVideoOutput(self.video_widget)
+        self.player.setSource(QUrl.fromLocalFile(GENERAL_PATH + 'rickroll.mp4'))
+        self.player.play()
 
-            self.status_bar = self.statusBar()
-            self.auto_match_info_label = QLabel('暂无自动匹配信息',self.status_bar)
-            self.status_bar.addPermanentWidget(self.auto_match_info_label)
+        '''
+        self.client = client
+        self.config = self.get_config()
+        self.sub_windows = []
 
-            self.setWindowTitle('bot专用下棋主窗口')
-            self.setWindowIcon(QIcon(ICON))
+        self.tab_widget = QTabWidget(self)
+        self.tab_widget.setMovable(True)
+        self.setCentralWidget(self.tab_widget)
 
-            self.create_challenge_and_game_page()
-            self.create_game_manager_and_bot_settings()
-            self.create_tool_bar()
-            self.start_thread()
+        self.status_bar = self.statusBar()
+        self.auto_match_info_label = QLabel('暂无自动匹配信息',self.status_bar)
+        self.status_bar.addPermanentWidget(self.auto_match_info_label)
 
-            self.game_windows = cast(dict[str,QMdiSubWindow],{})
+        self.setWindowTitle('bot专用下棋主窗口')
+        self.setWindowIcon(QIcon(ICON))
 
+        self.create_challenge_and_game_page()
+        self.create_game_manager_and_bot_settings()
+        self.create_tool_bar()
+        self.start_thread()
+
+        self.game_windows = cast(dict[str,QMdiSubWindow],{})
+        '''
+
+    def closeEvent(self, a0):
+        self.player.stop()
+        return super().closeEvent(a0)
+
+    '''
     def get_config(self):
         return cast(
             ConfigFormat,
@@ -505,3 +526,4 @@ class GameWindow(QMainWindow):
                     '对局结束',
                     f'胜利者：{value['winner']}'
                 )
+'''

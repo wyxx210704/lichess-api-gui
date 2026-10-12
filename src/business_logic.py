@@ -1,9 +1,9 @@
 from berserk import *
 from berserk.exceptions import ResponseError
 import sys
-from typing import Callable
 from PyQt6.QtWidgets import *
 from json import load
+from typing import Callable
 
 from .tools import *
 from .config_format import ConfigFormat
@@ -52,20 +52,16 @@ def login():
             return client,is_bot
     else:return login_with_wizard()
 
-def run_function(progress_bar:QProgressBar,func:Callable):
-    progress_bar.setValue(0)
-    progress_bar.setRange(0,0)
-
-    try:func()
-    except ResponseError as error:
-        show_api_error_dialog(
-            error,
-            '调用API报错',
-        )
-    except Exception as error:show_error_dialog(*get_error_details(error),'调用API报错')
-
-    progress_bar.setRange(0,100)
-    progress_bar.setValue(100)
+def run_function(func:Callable):
+    def wrapper():
+        try:func()
+        except ResponseError as error:
+            show_api_error_dialog(
+                error,
+                '调用API报错',
+            )
+        except Exception as error:show_error_dialog(*get_error_details(error),'调用API报错')
+    return wrapper
 
 def get_error_details(e: Exception) -> tuple[str, int, str, str]:
     """

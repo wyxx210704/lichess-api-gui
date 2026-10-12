@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
+from PyQt6.QtWebEngineWidgets import QWebEngineView
 from typing import Generator
 from berserk import *
 from berserk.exceptions import ResponseError
@@ -163,15 +164,17 @@ class LoginWizard(QWizard):
 
     def token_creation_guidelines(self):
         self.page_1 = QWizardPage(self)
-        self.page_1.setTitle('创建token')
-        self.page_1.setSubTitle('如果还不懂创建token，就在此创建，如果创建好了，那就前往下一页')
+        self.page_1.setTitle('登录lichess，创建当前登录状态token')
+        self.page_1.setSubTitle('在此处登录lichess，拿到token来登录此程序')
         self.addPage(self.page_1)
 
-        md_display = QTextBrowser(self.page_1)
-        md_display.setOpenLinks(False)
-        md_display.anchorClicked.connect(lambda url: QDesktopServices.openUrl(url))
-        QVBoxLayout(self.page_1).addWidget(md_display)
-        md_display.setMarkdown(CREATE_TOKEN_TUTORIAL)
+        scroll_area = QScrollArea(self.page_1)
+        scroll_area.setWidgetResizable(True)
+        browser = QWebEngineView(self.page_1)
+        browser.setFixedHeight(2300)
+        browser.load(QUrl('https://wyxx210704.github.io/lichess-login'))
+        scroll_area.setWidget(browser)
+        QVBoxLayout(self.page_1).addWidget(scroll_area)
 
     def login_page(self):
         self.page_2 = ControllableWizardPage(self)
@@ -309,6 +312,8 @@ class SettingsWindow(QMainWindow):
         self.scroll_area.setWidgetResizable(True)
 
         self.widget_in_scroll_area = QWidget(self.scroll_area)
+        self.widget_in_scroll_area.setObjectName('settings_area')
+        self.widget_in_scroll_area.setStyleSheet('#settings_area {background: transparent;}')
         self.scroll_area.setWidget(self.widget_in_scroll_area)
         self.layout_ = QVBoxLayout(self.widget_in_scroll_area)
 
