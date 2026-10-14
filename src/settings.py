@@ -33,8 +33,8 @@ class BaseSettingsWidget(QGroupBox):
 
 class TokenManager(BaseSettingsWidget):
     def __init__(self, parent: QWidget | None = None):
-        super().__init__('token管理',parent)
-        
+        super().__init__('token管理（已弃用）',parent)
+        self.setEnabled(False)
         # 配置文件路径
         self.config_path = CONFIG
         
@@ -245,21 +245,14 @@ class AutoLoginControl(BaseSettingsWidget):
         self.layout_ = QVBoxLayout(self)
         self.config = self.load_config_with_format()
 
-        self.group_box = QGroupBox(
+        self.check_box = QCheckBox(
             '是否自动登录',
             self,
         )
 
-        self.group_box.setCheckable(True)
-        self.layout_.addWidget(self.group_box)
-        self.layout_in_group_box = QHBoxLayout(self.group_box)
-
-        self.layout_in_group_box.addWidget(QLabel('token：'))
-        self.token_input = QLineEdit(self.group_box)
-        self.layout_in_group_box.addWidget(self.token_input)
-
-        self.group_box.setChecked(self.config['auto_login']['enable'])
-        self.token_input.setText(self.config['auto_login']['token'])
+        self.check_box.setCheckable(True)
+        self.layout_.addWidget(self.check_box)
+        self.check_box.setChecked(self.config['auto_login']['enable'])
 
         self.save_button = QPushButton(
             '保存',
@@ -270,8 +263,7 @@ class AutoLoginControl(BaseSettingsWidget):
         self.layout_.addWidget(self.save_button)
 
     def save_file(self):
-        self.config['auto_login']['enable'] = self.group_box.isChecked()
-        self.config['auto_login']['token'] = self.token_input.text()
+        self.config['auto_login']['enable'] = self.check_box.isChecked()
 
         self.save_config(self.config)
         QMessageBox.information(

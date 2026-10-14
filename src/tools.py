@@ -101,121 +101,75 @@ class GameViewer(QMainWindow):
         #示例数据太长，请跳转到game_viewer_example.py
         #如果使用vscode，可以直接ctrl+左键以上字符串就能直接跳转
 
-class LoginWizard(QWizard):
-    '''
-    页面功能如下
-    1. 创建token指引
-    2. 使用token登录
-    3. 将token添加到常用列表或者从常用列表删除
-    '''
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.layout_ = QVBoxLayout(self)
 
-    def __init__(self, parent:QWidget|None=None):
-        super().__init__(parent)
-        self.login_success = False
-        self.token = ''
-        self.is_bot = False
-
-        self.currentIdChanged.connect(self.check_login_state)
-        self.setOptions(
-            QWizard.WizardOption.NoDefaultButton|
-            QWizard.WizardOption.HaveNextButtonOnLastPage|
-            QWizard.WizardOption.HaveFinishButtonOnEarlyPages
-        )
-
-        self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
-        self.setWindowTitle('登录向导')
+        self.setWindowTitle('选择权限')
         self.setWindowIcon(QIcon(ICON))
+        apply_style(self)
+        self.layout_.addWidget(QLabel('在这里选择权限，可以选择是否自动登录'))
 
-        self.token_creation_guidelines()
-        self.login_page()
-        self.token_manager_page()
+        self.tree = QTreeWidget(self)
+        self.tree.setColumnCount(2)
+        self.tree.setHeaderLabels(['scope','描述'])
+        self.tree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.layout_.addWidget(self.tree)
 
-    def check_login_state(self,id_:int):
-        if (id_ == 1):
-            #登录页面是第二页，login_success变量会在login函数处理
-            #该条件代表在登录页面并且还没登录成功，下一步按钮就不会亮
-            self.page_2.change_state(self.login_success)
+        self.tree.addTopLevelItems([self.create_item(scope,description) for scope,description in {
+            'email:read':'读取邮箱地址',
+            'preference:read':'读取偏好设置',
+            'preference:write':'写入偏好设置',
 
-    def login(self):
-        try:user_info = Client(TokenSession(self.token_input.text())).account.get()
-        except Exception as error:
-            self.state_display.setText(f'登录报错：{error}')
-        else:
-            if ('title' in user_info) and (user_info['title'] == 'BOT'):
-                self.is_bot = True
-            else:
-                self.is_bot = False
+            'challenge:read':'读取收到的挑战',
+            'challenge:write':'发送、接受和拒绝挑战',
+            'challenge:bulk':'为其他棋手批量创建对局',
 
-            self.login_success = True
-            self.token = self.token_input.text()
-            self.page_2.change_state(True)
-            self.state_display.setText(f'登录成功，这个账号{'是' if self.is_bot else '不是'}bot账号，下棋时用的API是{'bot' if self.is_bot else 'board'}')
+            'puzzle:read':'读取谜题活动记录',
+            'puzzle:write':'解答谜题',
+            'racer:write':'创建和加入谜题赛事',
 
-    def load_config_with_format(self) -> ConfigFormat:
-        return load(open(
-            CONFIG,
-            'r',
-            encoding='utf-8',
-            errors='ignore',
-        ))
+            'study:read':'读取私人研习与直播',
+            'study:write':'创建、更新、删除研习与直播',
 
-    def select_from_the_list(self,item:QListWidgetItem):self.token_input.setText(self.tokens[item.text()])
-    def get_info(self):return Client(TokenSession(self.token)),self.is_bot
+            'engine:read':'查看和使用您的外部引擎',
+            'engine:write':'创建和更新外部引擎',
 
-    def token_creation_guidelines(self):
-        self.page_1 = QWizardPage(self)
-        self.page_1.setTitle('登录lichess，创建当前登录状态token')
-        self.page_1.setSubTitle('在此处登录lichess，拿到token来登录此程序')
-        self.addPage(self.page_1)
+            'follow:read':'读取已关注的棋手',
+            'follow:write':'关注和取消关注其他棋手',
+            'msg:write':'向其他棋手发送私信',
+            'note:write':'查看和撰写其他棋手的备注',
 
-        scroll_area = QScrollArea(self.page_1)
-        scroll_area.setWidgetResizable(True)
-        browser = QWebEngineView(self.page_1)
-        browser.setFixedHeight(2300)
-        browser.load(QUrl('https://wyxx210704.github.io/lichess-login'))
-        scroll_area.setWidget(browser)
-        QVBoxLayout(self.page_1).addWidget(scroll_area)
+            'team:read':'读取私人团队信息',
+            'team:write':'加入和离开团队',
+            'team:lead':'管理您所带领的团队：发送私信、移除成员',
 
-    def login_page(self):
-        self.page_2 = ControllableWizardPage(self)
-        self.page_2.setTitle('登录')
-        self.page_2.setSubTitle('必须先在这里登录才能过得去')
-        self.addPage(self.page_2)
+            'tournament:read':'查看私人锦标赛',
+            'tournament:write':'创建、更新和加入锦标赛',
 
-        self.page_2_layout = QVBoxLayout(self.page_2)
-        self.page_2_layout.addWidget(QLabel('请在下方输入token，或者从列表中选择'))
+            'board:play':'使用棋盘 API 进行对局',
+            'bot:play':'使用机器人 API 进行对局'
+        }.items()])
 
-        self.tokens = self.load_config_with_format()['tokens']
+        self.auto_login = QCheckBox('自动登录',self)
+        self.layout_.addWidget(self.auto_login)
 
-        self.tokens_list = QListWidget(self.page_2)
-        self.tokens_list.addItems([name for name in self.tokens.keys()])
-        self.tokens_list.itemClicked.connect(self.select_from_the_list)
-        self.page_2_layout.addWidget(self.tokens_list)
+        self.confirm_button = QPushButton('选择账号并登录',self)
+        self.confirm_button.clicked.connect(self.accept)
+        self.layout_.addWidget(self.confirm_button)
 
-        self.token_input = QLineEdit()
-        self.token_input.setPlaceholderText('输入token')
-        self.page_2_layout.addWidget(self.token_input)
+    def get_data(self):
+        return {
+            'auto_login':self.auto_login.isChecked(),
+            'scopes':' '.join([item.text(0) for item in self.tree.selectedItems()])
+        }
 
-        self.login_button = QPushButton(
-            '登录',
-            self.page_2,
-        )
-
-        self.login_button.clicked.connect(self.login)
-        self.page_2_layout.addWidget(self.login_button)
-
-        self.state_display = StringDisplay(self.page_2)
-        self.state_display.setPlaceholderText('登录的状态会显示在这里')
-        self.page_2_layout.addWidget(self.state_display)
-
-    def token_manager_page(self):
-        self.page_3 = QWizardPage(self)
-        self.page_3.setTitle('管理token')
-        self.page_3.setSubTitle('如果有常用token的话，那就可以在这里管理，如果不需要就点完成按钮')
-        self.addPage(self.page_3)
-
-        token_manager = TokenManager(self.page_3)
-        QVBoxLayout(self.page_3).addWidget(token_manager)
+    def create_item(self,scope:str,description:str):
+        item = QTreeWidgetItem()
+        item.setText(0,scope)
+        item.setText(1,description)
+        return item
 
 class ErrorMessageBox(QDialog):
     def __init__(self, file_name:str, line_number:int, error_type:str, error_message:str, title:str="错误", parent:QWidget|None=None):

@@ -250,7 +250,7 @@ class BoardMain(QMainWindow):
             item.setText(10,'是' if game['rated'] else '否')
             item.setText(11,'是' if game['hasMoved'] else '否')
             item.setText(13,'是' if game['isMyTurn'] else '否')
-            item.setText(14,str(game['secondsLeft']))#这是整数要转
+            item.setText(14,(str(game['secondsLeft']) if 'secondsLeft' in game else ''))#这是整数要转
             item.setText(15,str(game['perf']))#这是整数要转
 
             self.tree_widget_for_game.setItemWidget(item,6,InfoButton(game['status'],self.tree_widget_for_game))

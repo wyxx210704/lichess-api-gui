@@ -13,6 +13,5 @@ class FunctionSettings(TypedDict):
     copy_indent:CopyIndent
 
 class ConfigFormat(TypedDict):
-    tokens:dict[str,str]
     auto_login:AutoLogin
     function_settings:FunctionSettings

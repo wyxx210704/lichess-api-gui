@@ -2,12 +2,13 @@ from berserk import *
 from berserk.exceptions import ResponseError
 import sys
 from PyQt6.QtWidgets import *
-from json import load
+from json import load,dump
 from typing import Callable
 
 from .tools import *
 from .config_format import ConfigFormat
 from .costants import CONFIG
+from .app_basic import login_with_lichess
 
 def load_config_with_format() -> ConfigFormat:
     return load(open(
@@ -18,12 +19,48 @@ def load_config_with_format() -> ConfigFormat:
     ))
 
 def login_with_wizard():
-    login_dialog = LoginWizard()
-    if login_dialog.exec() == QDialog.DialogCode.Accepted:return login_dialog.get_info()
+    dialog = LoginDialog()
+
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        token = login_with_lichess(dialog.get_data()['scopes'])['access_token']
+
+        config = load_config_with_format()
+        config['auto_login']['enable'] = dialog.get_data()['auto_login']
+        config['auto_login']['token'] = token
+        
+        dump(
+            config,
+            open(
+                CONFIG,
+                'w',
+                encoding='utf-8',
+                errors='ignore',
+            ),
+            ensure_ascii=False,
+            indent=4,
+        )
+
+        try:
+            client = Client(TokenSession(token))
+            user_info = client.account.get()
+        except ResponseError as error:
+            show_api_error_dialog(
+                error,
+                '登录失败',
+            )
+            return login_with_wizard()
+        except Exception as error:
+            show_error_dialog(*get_error_details(error),'登录失败')
+            return login_with_wizard()
+        else:
+            if ('title' in user_info) and (user_info['title'] == 'BOT'):is_bot = True
+            else:is_bot = False
+            return client,is_bot
     else:exit()
 
 def login():
-    try:auto_login = load_config_with_format()['auto_login']['enable']
+    try:
+        auto_login = load_config_with_format()['auto_login']['enable']
     except ResponseError as error:
         auto_login = False
         show_api_error_dialog(
@@ -38,11 +75,13 @@ def login():
         try:
             client = Client(TokenSession(load_config_with_format()['auto_login']['token']))
             user_info = client.account.get()
+            
         except ResponseError as error:
             show_api_error_dialog(
                 error,
                 '自动登录失败',
             )
+            return login_with_wizard()
         except Exception as error:
             show_error_dialog(*get_error_details(error),'自动登录失败')
             return login_with_wizard()
